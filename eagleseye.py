@@ -25,8 +25,8 @@ class MarketWatcher(threading.Thread):
 class EaglesEye(threading.Thread):
   def __init__(self):
     self.markets = {}
-    self.markets['okcoin'] = OKCoin()
-    self.markets['bitfinex'] = Bitfinex()
+    self.markets['okcoin'] = OKCoin(okcoin_partner, okcoin_secret)
+    self.markets['bitfinex'] = Bitfinex(bitfinex_key, bitfinex_secret)
     self.market_watchers = {}
     # world best bid and offer
     self.WBBO = {kCNY: {'ask': -1, 'iask': -1, 'bid': -1, 'ibid': -1, 'ask_market': None, 'bid_market': None}, kUSD: {'ask': -1, 'iask': -1, 'bid': -1, 'ibid': -1, 'ask_market': None, 'bid_market': None}}
