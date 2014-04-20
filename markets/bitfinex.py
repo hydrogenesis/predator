@@ -1,6 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import os, sys
+if __name__ == '__main__':
+  os.chdir(os.path.dirname(sys.argv[0]))
+
 from decimal import Decimal
 import requests
 import json
@@ -10,7 +14,6 @@ import hashlib
 import time
 import types
 from market import *
-import sys
 sys.path.append('../..')
 from secret import *
 
@@ -140,6 +143,9 @@ def auto_renew(bitfinex, max_ask = 50000):
   max_rate = 10000.0
   ask_sum = 0.0
   for ask in asks:
+    # TODO: bypassing flash return rate, EXPERIMENTAL
+    #if ask[u'frr'] == u'Yes':
+    #  continue
     for offer in offers:
       if offer[u'direction'] == u'lend':
         if ask[u'timestamp'] == offer[u'timestamp'] and ask[u'rate'] == offer[u'rate'] and ask[u'amount'] == offer[u'remaining_amount'] and ask[u'period'] == offer[u'period']:
@@ -195,7 +201,10 @@ if __name__ == '__main__':
   bitfinex = Bitfinex(bitfinex_key, bitfinex_secret)
   while True:
     print "***************** Bitfinex Begin ********************"
-    auto_renew(bitfinex, 100000)
+    try:
+      auto_renew(bitfinex, 100000)
+    except:
+      pass
     print "***************** Bitfinex End ********************"
     time.sleep(60)
 
