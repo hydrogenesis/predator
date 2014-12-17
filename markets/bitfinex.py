@@ -137,21 +137,21 @@ def auto_renew(bitfinex, max_ask = 50000):
   print '***** Offers ******'
   offers = bitfinex.offers()
   for offer in offers:
-    print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(offer[u'id'], offer[u'timestamp'], float(offer[u'amount']), float(offer[u'rate']), offer[u'period'])
+    print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(offer[u'id'], offer[u'timestamp'], float(offer[u'remaining_amount']), float(offer[u'rate']), offer[u'period'])
 
   asks = bitfinex.lendbook('usd')[u'asks']
   max_rate = 10000.0
   ask_sum = 0.0
   for ask in asks:
     # TODO: bypassing flash return rate, EXPERIMENTAL
-    #if ask[u'frr'] == u'Yes':
-    #  continue
+    if ask[u'frr'] == u'Yes':
+      continue
     for offer in offers:
       if offer[u'direction'] == u'lend':
         if ask[u'timestamp'] == offer[u'timestamp'] and ask[u'rate'] == offer[u'rate'] and ask[u'amount'] == offer[u'remaining_amount'] and ask[u'period'] == offer[u'period']:
           # bypass my own offers
           print '***** Ignoring the following orders ******'
-          print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(offer[u'id'], offer[u'timestamp'], float(offer[u'amount']), float(offer[u'rate']), offer[u'period'])
+          print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(offer[u'id'], offer[u'timestamp'], float(offer[u'remaining_amount']), float(offer[u'rate']), offer[u'period'])
           continue
     max_rate = float(ask[u'rate'])
     if ask_sum > max_ask:
@@ -169,7 +169,7 @@ def auto_renew(bitfinex, max_ask = 50000):
   for offer in offers:
     if float(offer[u'rate']) > target_rate:
       print '***** Canceling offer *****'
-      print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(offer[u'id'], offer[u'timestamp'], float(offer[u'amount']), float(offer[u'rate']), offer[u'period'])
+      print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(offer[u'id'], offer[u'timestamp'], float(offer[u'remaining_amount']), float(offer[u'rate']), offer[u'period'])
       print bitfinex.cancel_offer(offer[u'id'])
   print '***** Available funds ******'
   time.sleep(3)
@@ -194,7 +194,7 @@ def auto_renew(bitfinex, max_ask = 50000):
   time.sleep(3)
   offers = bitfinex.offers()
   for offer in offers:
-    print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(offer[u'id'], offer[u'timestamp'], float(offer[u'amount']), float(offer[u'rate']), offer[u'period'])
+    print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(offer[u'id'], offer[u'timestamp'], float(offer[u'remaining_amount']), float(offer[u'rate']), offer[u'period'])
 
 if __name__ == '__main__':
   # this is not a unit test, but a useful feature
@@ -203,7 +203,10 @@ if __name__ == '__main__':
     print "***************** Bitfinex Begin ********************"
     try:
       auto_renew(bitfinex, 100000)
-    except:
+    except Exception as e:
+      print '--------ERROR BEGIN---------'
+      print e
+      print '--------ERROR END-----------'
       pass
     print "***************** Bitfinex End ********************"
     time.sleep(60)
