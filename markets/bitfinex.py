@@ -162,7 +162,7 @@ def auto_renew(bitfinex, max_ask = 50000):
   print 'Maximum lending rate:', max_rate
   print 'Total usd ask lower than max_rate:', ask_sum
   print 'Our target lending rate:', target_rate
-  if target_rate < 10.0 or target_rate > 999.0:
+  if target_rate < 5.0 or target_rate > 999.0:
     print 'unreasonable target_rate:', target_rate
     return
   # begin lending
