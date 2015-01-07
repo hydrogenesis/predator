@@ -93,15 +93,13 @@ class Bitfinex(Market):
     return self._get("https://" + self.api + "/v1/credits", headers=headers, verify=False)
     
   def _get(self, url, headers = None, verify = False):
-    s = requests.Session()
-    s.mount('https://', TlsAdapter())
-    ret = s.get(url, headers = headers, verify = verify, timeout = kTimeout)
+    #s = requests.Session()
+    #s.mount('https://', TlsAdapter())
+    ret = requests.get(url, headers = headers, verify = verify, timeout = kTimeout)
     return ret.json()
 
   def _post(self, url, headers = None, verify = False):
-    s = requests.Session()
-    s.mount('https://', TlsAdapter())
-    ret = s.post(url, headers = headers, verify = verify, timeout = kTimeout)
+    ret = requests.post(url, headers = headers, verify = verify, timeout = kTimeout)
     return ret.json()
 
   def _ticker(self, symbol="btcusd"):
