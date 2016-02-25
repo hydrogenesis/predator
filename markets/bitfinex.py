@@ -7,6 +7,7 @@ if __name__ == '__main__':
 
 from decimal import Decimal
 import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import json
 import base64
 import hmac
@@ -165,7 +166,7 @@ def auto_renew(bitfinex, max_ask = 50000):
   print 'Maximum lending rate:', max_rate
   print 'Total usd ask lower than max_rate:', ask_sum
   print 'Our target lending rate:', target_rate
-  if target_rate < 5.0 or target_rate > 999.0:
+  if target_rate < 1.0 or target_rate > 999.0:
     print 'unreasonable target_rate:', target_rate
     return
   # begin lending
@@ -201,11 +202,12 @@ def auto_renew(bitfinex, max_ask = 50000):
 
 if __name__ == '__main__':
   # this is not a unit test, but a useful feature
+  requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
   bitfinex = Bitfinex(bitfinex_key, bitfinex_secret)
   while True:
     print "***************** Bitfinex Begin ********************"
     try:
-      auto_renew(bitfinex, 100000)
+      auto_renew(bitfinex, 50000)
     except Exception as e:
       print '--------ERROR BEGIN---------'
       print e
