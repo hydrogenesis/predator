@@ -242,7 +242,7 @@ def check_interest(bitfinex, html_file):
       </head><body>""")
   tz = timezone("Asia/Shanghai")
   f.write("Last update: " + datetime.datetime.now(tz).strftime("%Y/%m/%d %H:%M:%S"))
-  f.write("""<table border="1" cellpadding="0" cellspacing="0" width="500px">
+  f.write("""<table border="1" cellpadding="0" cellspacing="0" style="font-size:20pt;min-width:700px; ">
            <tr><td>Rate</td><td>Amount</td><td>Balance</td><td>Date</td></tr>\n
         """)
   for item in parsed:
