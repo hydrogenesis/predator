@@ -247,6 +247,10 @@ def check_interest(bitfinex, html_file):
   #print parsed
   if len(parsed) <= 0: return
   #print json.dumps(parsed, indent=2)
+  exchange_rate_str = get_exchange_rate()
+  ex_rate = float(exchange_rate_str)
+  tickers = get_ticker(bitfinex, OKCoin('', ''))
+  btc_rate = float(tickers['CNY'])/float(tickers['USD'])
   f = open(html_file, 'w')
   f.write("""<html><head>
       <title>Bitfinex Funding Fund for NM</title>
@@ -265,11 +269,7 @@ def check_interest(bitfinex, html_file):
       </head><body>""")
   tz = timezone("Asia/Shanghai")
   f.write("Last update: " + datetime.datetime.now(tz).strftime("%Y/%m/%d %H:%M:%S") + "<br />")
-  exchange_rate_str = get_exchange_rate()
-  ex_rate = float(exchange_rate_str)
   f.write("USD vs CNY in fiat: " + exchange_rate_str + "<br />")
-  tickers = get_ticker(bitfinex, OKCoin('', ''))
-  btc_rate = float(tickers['CNY'])/float(tickers['USD'])
   f.write("USD vs CNY in btc: %.04f<br />" % btc_rate)
   f.write("Bitcoin price: $%.02f(¥%.02f) vs ¥%.02f($%.02f)<br />" % \
       (float(tickers['USD']), float(tickers['USD'])*ex_rate, \
