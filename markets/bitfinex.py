@@ -8,6 +8,7 @@ if __name__ == '__main__':
 from decimal import Decimal
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from datetime import timedelta, date
 import json
 import base64
 import hmac
@@ -92,6 +93,19 @@ class Bitfinex(Market):
     payload["nonce"] = str(long(time.time() * 100000))
     headers = self._prepare_payload(True, payload)
     return self._get("https://" + self.api + "/v1/credits", headers=headers, verify=False)
+
+  def interest_history(self, since_days, limit=1000):
+    payload = {}
+    payload["request"] = "/v1/history"
+    payload["currency"] = "USD"
+    d = datetime.datetime.now() + timedelta(days=since_days)
+    payload["since"] = str(long((d - datetime.datetime(1970, 1, 1)).total_seconds()))
+    payload["limit"] = limit
+    payload["nonce"] = str(long(time.time() * 100000))
+    payload["wallet"] = "deposit"
+    headers = self._prepare_payload(True, payload)
+    print payload
+    return self._post("https://" + self.api + "/v1/history", headers=headers, verify=False)
     
   def _get(self, url, headers = None, verify = False):
     #s = requests.Session()
@@ -200,6 +214,31 @@ def auto_renew(bitfinex, max_ask = 50000):
   for offer in offers:
     print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(offer[u'id'], offer[u'timestamp'], float(offer[u'remaining_amount']), float(offer[u'rate']), offer[u'period'])
 
+def check_interest(bitfinex, html_file):
+  result = bitfinex.interest_history(-30)
+  parsed = []
+  for item in result:
+    if 'description' in item:
+      if item['description'] == 'Margin Funding Payment on wallet Deposit':
+        item['interest rate'] = round(36500 * float(item['amount']) / float(item['balance']), 2)
+        parsed.append(item)
+  #print parsed
+  if len(parsed) <= 0: return
+  #print json.dumps(parsed, indent=2)
+  f = open(html_file, 'w')
+  f.write("<html><head><title>Bitfinex Funding Fund</title></head><body>")
+  f.write("Last update: " + datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+  f.write("""<table border="1" cellpadding="0" cellspacing="0" width="500px">
+           <tr><td>Rate</td><td>Amount</td><td>Balance</td><td>Date</td></tr>\n
+        """)
+  for item in parsed:
+    f.write("<tr><td>%s%%</td><td>%s</td><td>%s</td><td>%s</td></tr>\n" % \
+        ('{:,.2f}'.format(item['interest rate']), '${:,.2f}'.format(float(item['amount'])), \
+        '${:,.2f}'.format(float(item['balance'])), \
+        datetime.datetime.fromtimestamp(long(float(item['timestamp']))).strftime("%Y/%m/%d %H:%M:%S")))
+  f.write("</table></body></html>")
+  f.close()
+
 if __name__ == '__main__':
   # this is not a unit test, but a useful feature
   requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -208,6 +247,7 @@ if __name__ == '__main__':
     print "***************** Bitfinex Begin ********************"
     try:
       auto_renew(bitfinex, 50000)
+      check_interest(bitfinex, 'interest_log.html')
     except Exception as e:
       print '--------ERROR BEGIN---------'
       print e
