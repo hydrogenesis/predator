@@ -15,6 +15,8 @@ import base64
 import hmac
 import hashlib
 import time
+import StringIO
+import csv
 import types
 from market import *
 from tlsadapter import *
@@ -215,6 +217,15 @@ def auto_renew(bitfinex, max_ask = 50000):
   for offer in offers:
     print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(offer[u'id'], offer[u'timestamp'], float(offer[u'remaining_amount']), float(offer[u'rate']), offer[u'period'])
 
+def get_exchange_rate():
+  url = 'http://download.finance.yahoo.com/d/quotes.csv?e=.csv&f=sl1d1t1&s=USDCNY=x'
+  ret = requests.get(url, verify = False, timeout = 30)
+  f = StringIO.StringIO(ret.text)
+  reader = csv.reader(f, delimiter=',')
+  for row in reader:
+    return row[1]
+  return "N/A"
+
 def check_interest(bitfinex, html_file):
   result = bitfinex.interest_history(-30)
   parsed = []
@@ -241,7 +252,8 @@ def check_interest(bitfinex, html_file):
       </style>
       </head><body>""")
   tz = timezone("Asia/Shanghai")
-  f.write("Last update: " + datetime.datetime.now(tz).strftime("%Y/%m/%d %H:%M:%S"))
+  f.write("Last update: " + datetime.datetime.now(tz).strftime("%Y/%m/%d %H:%M:%S") + "<br />")
+  f.write("USD vs CNY: " + get_exchange_rate() + "<br />")
   f.write("""<table border="1" cellpadding="0" cellspacing="0" style="font-size:20pt;min-width:700px; ">
            <tr><td>Rate</td><td>Amount</td><td>Balance</td><td>Date</td></tr>\n
         """)
