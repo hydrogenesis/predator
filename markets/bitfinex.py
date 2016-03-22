@@ -238,7 +238,9 @@ def check_interest(bitfinex, html_file):
   if len(parsed) <= 0: return
   #print json.dumps(parsed, indent=2)
   f = open(html_file, 'w')
-  f.write("""<html><head><title>Bitfinex Funding Fund for NM</title>
+  f.write("""<html><head>
+      <title>Bitfinex Funding Fund for NM</title>
+      <meta charset="UTF-8">
       <style>
       tbody tr:nth-child(even)  td { background-color: #eee; }
       @media screen and (max-width: 1024px) {
