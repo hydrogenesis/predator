@@ -253,14 +253,18 @@ def check_interest(bitfinex, html_file):
       </head><body>""")
   tz = timezone("Asia/Shanghai")
   f.write("Last update: " + datetime.datetime.now(tz).strftime("%Y/%m/%d %H:%M:%S") + "<br />")
-  f.write("USD vs CNY: " + get_exchange_rate() + "<br />")
-  f.write("""<table border="1" cellpadding="0" cellspacing="0" style="font-size:20pt;min-width:700px; ">
-           <tr><td>Rate</td><td>Amount</td><td>Balance</td><td>Date</td></tr>\n
+  exchange_rate_str = get_exchange_rate()
+  ex_rate = float(exchange_rate_str)
+  f.write("USD vs CNY: " + exchange_rate_str + "<br />")
+  f.write("""<table border="1" cellpadding="0" cellspacing="0" style="font-size:20pt;min-width:900px; ">
+           <tr><td>Rate</td><td>Amount($)</td><td>Amount(¥)</td><td>Balance($)</td><td>Balance(¥)</td><td>Date</td></tr>\n
         """)
   for item in parsed:
-    f.write("<tr><td>%s%%</td><td>%s</td><td>%s</td><td>%s</td></tr>\n" % \
+    f.write("<tr><td>%s%%</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n" % \
         ('{:,.2f}'.format(item['interest rate']), '${:,.2f}'.format(float(item['amount'])), \
+        '¥{:,.2f}'.format(float(item['amount']) * ex_rate), \
         '${:,.2f}'.format(float(item['balance'])), \
+        '¥{:,.2f}'.format(float(item['balance']) * ex_rate), \
         datetime.datetime.fromtimestamp(long(float(item['timestamp'])), tz).strftime("%Y/%m/%d %H:%M:%S")))
   f.write("</table></body></html>")
   f.close()
