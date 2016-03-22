@@ -19,6 +19,7 @@ import StringIO
 import csv
 import types
 from market import *
+from okcoin import OKCoin
 from tlsadapter import *
 sys.path.append('../..')
 from secret import *
@@ -226,6 +227,15 @@ def get_exchange_rate():
     return row[1]
   return "N/A"
 
+def get_ticker(bitfinex, okc):
+  ticker_bitfinex = bitfinex._ticker()
+  ticker_okcoin = okc._ticker()
+  result = {
+      'USD': ticker_bitfinex['last_price'],
+      'CNY': ticker_okcoin['ticker']['last']
+      }
+  return result
+  
 def check_interest(bitfinex, html_file):
   result = bitfinex.interest_history(-30)
   parsed = []
@@ -257,7 +267,14 @@ def check_interest(bitfinex, html_file):
   f.write("Last update: " + datetime.datetime.now(tz).strftime("%Y/%m/%d %H:%M:%S") + "<br />")
   exchange_rate_str = get_exchange_rate()
   ex_rate = float(exchange_rate_str)
-  f.write("USD vs CNY: " + exchange_rate_str + "<br />")
+  f.write("USD vs CNY in fiat: " + exchange_rate_str + "<br />")
+  tickers = get_ticker(bitfinex, OKCoin('', ''))
+  btc_rate = float(tickers['CNY'])/float(tickers['USD'])
+  f.write("USD vs CNY in btc: %.04f<br />" % btc_rate)
+  f.write("Bitcoin price: $%.02f(¥%.02f) vs ¥%.02f($%.02f)<br />" % \
+      (float(tickers['USD']), float(tickers['USD'])*ex_rate, \
+      float(tickers['CNY']), float(tickers['CNY'])/ex_rate))
+  f.write("Bitcoin delta: %.04f%%<br />" % ((btc_rate / ex_rate - 1)*100))
   f.write("""<table border="1" cellpadding="0" cellspacing="0" style="font-size:20pt;min-width:900px; ">
            <tr><td>Rate</td><td>Amount($)</td><td>Amount(¥)</td><td>Balance($)</td><td>Balance(¥)</td><td>Date</td></tr>\n
         """)
