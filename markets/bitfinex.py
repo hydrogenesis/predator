@@ -10,6 +10,7 @@ import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from datetime import timedelta, date
 import json
+from pytz import timezone
 import base64
 import hmac
 import hashlib
@@ -226,8 +227,21 @@ def check_interest(bitfinex, html_file):
   if len(parsed) <= 0: return
   #print json.dumps(parsed, indent=2)
   f = open(html_file, 'w')
-  f.write("<html><head><title>Bitfinex Funding Fund</title></head><body>")
-  f.write("Last update: " + datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+  f.write("""<html><head><title>Bitfinex Funding Fund</title>
+      <style>
+      tbody tr:nth-child(even)  td { background-color: #eee; }
+      @media screen and (max-width: 1024px) {
+        table {
+          width: 96%;
+          margin: 2%; 
+          overflow-x: auto;
+          display: block;
+        }   
+      }   
+      </style>
+      </head><body>""")
+  tz = timezone("Asia/Shanghai")
+  f.write("Last update: " + datetime.datetime.now(tz).strftime("%Y/%m/%d %H:%M:%S"))
   f.write("""<table border="1" cellpadding="0" cellspacing="0" width="500px">
            <tr><td>Rate</td><td>Amount</td><td>Balance</td><td>Date</td></tr>\n
         """)
@@ -235,7 +249,7 @@ def check_interest(bitfinex, html_file):
     f.write("<tr><td>%s%%</td><td>%s</td><td>%s</td><td>%s</td></tr>\n" % \
         ('{:,.2f}'.format(item['interest rate']), '${:,.2f}'.format(float(item['amount'])), \
         '${:,.2f}'.format(float(item['balance'])), \
-        datetime.datetime.fromtimestamp(long(float(item['timestamp']))).strftime("%Y/%m/%d %H:%M:%S")))
+        datetime.datetime.fromtimestamp(long(float(item['timestamp'])), tz).strftime("%Y/%m/%d %H:%M:%S")))
   f.write("</table></body></html>")
   f.close()
 
