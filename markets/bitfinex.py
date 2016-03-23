@@ -254,7 +254,7 @@ def check_interest(bitfinex, html_file):
   f = open(html_file, 'w')
   f.write("""<html><head>
       <title>Bitfinex Funding Fund for NM</title>
-      <link rel="shortcut icon" href="nemo.ico" />
+      <link rel="apple-touch-icon" href="nemo.ico" />
       <meta charset="UTF-8">
       <style>
       tbody tr:nth-child(even)  td { background-color: #eee; }
