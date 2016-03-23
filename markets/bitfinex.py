@@ -275,6 +275,26 @@ def check_interest(bitfinex, html_file):
       (float(tickers['USD']), float(tickers['USD'])*ex_rate, \
       float(tickers['CNY']), float(tickers['CNY'])/ex_rate))
   f.write("Bitcoin delta: %.04f%%<br />" % ((btc_rate / ex_rate - 1)*100))
+  # in fact it's 100050
+  # n_init = 100050
+  # m_init = 108195.16
+  # on 2016/3/23
+  nemo_init = 100027
+  nemo_init_date = datetime.datetime(2016, 3, 23, tzinfo = tz)
+  nemo_days = (datetime.datetime.now(tz) - nemo_init_date).days + 1
+  nemo_percentage = 0.4804433389952496
+  nemo_last_usd = float(parsed[0]['amount']) * nemo_percentage
+  nemo_now_usd = float(parsed[0]['balance']) * nemo_percentage
+  nemo_gain_usd = nemo_now_usd - nemo_init
+  nemo_last_cny = nemo_last_usd * ex_rate
+  nemo_now_cny = nemo_now_usd * ex_rate
+  nemo_gain_cny = nemo_gain_usd * ex_rate
+  print nemo_gain_usd, nemo_init, nemo_days
+  nemo_ratio = nemo_gain_usd / nemo_init / nemo_days * 365 * 100
+  f.write("N last profit: $%.02f(¥%.02f)<br />" % (nemo_last_usd, nemo_last_cny))
+  f.write("N total profit: $%.02f(¥%.02f)<br />" % (nemo_gain_usd, nemo_gain_cny))
+  f.write("N balance: $%.02f(¥%.02f)<br />" % (nemo_now_usd, nemo_now_cny))
+  f.write("N ratio: %.02f%%<br />" % (nemo_ratio))
   f.write("""<table border="1" cellpadding="0" cellspacing="0" style="font-size:20pt;min-width:900px; ">
            <tr><td>Rate</td><td>Amount($)</td><td>Amount(¥)</td><td>Balance($)</td><td>Balance(¥)</td><td>Date</td></tr>\n
         """)
