@@ -292,10 +292,12 @@ def check_interest(bitfinex, html_file):
   nemo_gain_cny = nemo_gain_usd * ex_rate
   print nemo_gain_usd, nemo_init, nemo_days
   nemo_ratio = nemo_gain_usd / nemo_init / nemo_days * 365 * 100
+  nemo_last_ratio = nemo_last_usd / nemo_now_usd * 365 * 100
   f.write("N last profit: $%.02f(¥%.02f)<br />" % (nemo_last_usd, nemo_last_cny))
   f.write("N total profit: $%.02f(¥%.02f)<br />" % (nemo_gain_usd, nemo_gain_cny))
   f.write("N balance: $%.02f(¥%.02f)<br />" % (nemo_now_usd, nemo_now_cny))
-  f.write("N ratio: %.02f%%<br />" % (nemo_ratio))
+  f.write("N last ratio: %.02f%%<br />" % (nemo_last_ratio))
+  f.write("N total ratio: %.02f%%<br />" % (nemo_ratio))
   f.write("""<table border="1" cellpadding="0" cellspacing="0" style="font-size:20pt;min-width:900px; ">
            <tr><td>Rate</td><td>Amount($)</td><td>Amount(¥)</td><td>Balance($)</td><td>Balance(¥)</td><td>Date</td></tr>\n
         """)
