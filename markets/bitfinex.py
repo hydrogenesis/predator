@@ -282,7 +282,7 @@ def check_interest(bitfinex, html_file):
   # on 2016/3/23
   nemo_init = 100027
   nemo_init_date = datetime.datetime(2016, 3, 23, tzinfo = tz)
-  nemo_days = (datetime.datetime.now(tz) - nemo_init_date).days + 1
+  nemo_days = (datetime.datetime.fromtimestamp(long(float(parsed[0]['timestamp'])), tz) - nemo_init_date).days + 1
   nemo_percentage = 0.4804433389952496
   nemo_last_usd = float(parsed[0]['amount']) * nemo_percentage
   nemo_now_usd = float(parsed[0]['balance']) * nemo_percentage
@@ -290,7 +290,6 @@ def check_interest(bitfinex, html_file):
   nemo_last_cny = nemo_last_usd * ex_rate
   nemo_now_cny = nemo_now_usd * ex_rate
   nemo_gain_cny = nemo_gain_usd * ex_rate
-  print nemo_gain_usd, nemo_init, nemo_days
   nemo_ratio = nemo_gain_usd / nemo_init / nemo_days * 365 * 100
   nemo_last_ratio = nemo_last_usd / nemo_now_usd * 365 * 100
   f.write("N last profit: $%.02f(¥%.02f)<br />" % (nemo_last_usd, nemo_last_cny))
