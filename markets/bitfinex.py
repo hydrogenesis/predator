@@ -201,10 +201,17 @@ def auto_renew(bitfinex, max_ask = 50000):
     if account[u'type'] == u'deposit':
       available_funds = float(account[u'available'])
   print available_funds
-  if available_funds < 100:
-    print "Not enough funds"
+  # Lend usd when balance is greater than kMinLendingFund
+  kMinLendingFund = 200.0
+  # Always keep kKeepFund usd in hand
+  kKeepFund = 128
+  if available_funds < kMinLendingFund:
+    print "Available funds less than minimum lend amount: %.02f vs %.02f" %(available_funds, kMinLendingFund)
     return
-  lend_funds = available_funds - 0.01
+  lend_funds = available_funds - kKeepFund
+  if lend_funds < 0.01:
+    print "Available funds less than reserved amount: %.02f vs %.02f" %(available_funds, kKeepFund)
+    return
   days = 2
   if target_rate > 36.5:
     days = 7
