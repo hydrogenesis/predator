@@ -109,3 +109,4 @@ class Market(object):
       cum_bid += self.bids[price]
       if cum_bid > kBTCDepth and self.best_bid == -1:
         self.best_bid = price
+
