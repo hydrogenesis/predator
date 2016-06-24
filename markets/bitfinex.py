@@ -204,7 +204,8 @@ def auto_renew(bitfinex, max_ask = 50000):
   # Lend usd when balance is greater than kMinLendingFund
   kMinLendingFund = 100.0
   # Always keep kKeepFund usd in hand
-  kKeepFund = 0.01
+  kKeepFund = 400000
+  #kKeepFund = 0.01
   if available_funds < kMinLendingFund:
     print "Available funds less than minimum lend amount: %.02f vs %.02f" %(available_funds, kMinLendingFund)
     return
@@ -287,13 +288,18 @@ def check_interest(bitfinex, html_file):
   # n_init = 100050
   # m_init = 108195.16
   # on 2016/3/23
-  nemo_init = 100027
-  nemo_init_date = datetime.datetime(2016, 3, 23, tzinfo = tz)
+  #nemo_init = 100027
+  #nemo_percentage = 0.4804433389952496
+  #nemo_init_date = datetime.datetime(2016, 3, 23, tzinfo = tz)
+  nemo_init = 40000
+  nemo_percentage = 0.445220928404126
+  nemo_init_date = datetime.datetime(2016, 6, 3, tzinfo = tz)
   nemo_days = (datetime.datetime.fromtimestamp(long(float(parsed[0]['timestamp'])), tz) - nemo_init_date).days + 1
-  nemo_percentage = 0.4804433389952496
+  if nemo_days < 1: nemo_days = 1
   nemo_last_usd = float(parsed[0]['amount']) * nemo_percentage
   nemo_now_usd = float(parsed[0]['balance']) * nemo_percentage
   nemo_gain_usd = nemo_now_usd - nemo_init
+  if nemo_gain_usd < 0: nemo_gain_usd = 0
   nemo_last_cny = nemo_last_usd * ex_rate
   nemo_now_cny = nemo_now_usd * ex_rate
   nemo_gain_cny = nemo_gain_usd * ex_rate
@@ -304,6 +310,7 @@ def check_interest(bitfinex, html_file):
   f.write("N balance: $%.02f(¥%.02f)<br />" % (nemo_now_usd, nemo_now_cny))
   f.write("N last ratio: %.02f%%<br />" % (nemo_last_ratio))
   f.write("N total ratio: %.02f%%<br />" % (nemo_ratio))
+  f.write("N days since the beginning: %d<br />" % (nemo_days))
   f.write("""<table border="1" cellpadding="0" cellspacing="0" style="font-size:20pt;min-width:900px; ">
            <tr><td>Rate</td><td>Amount($)</td><td>Amount(¥)</td><td>Balance($)</td><td>Balance(¥)</td><td>Date</td></tr>\n
         """)
