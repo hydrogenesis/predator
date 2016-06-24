@@ -204,7 +204,7 @@ def auto_renew(bitfinex, max_ask = 50000):
   # Lend usd when balance is greater than kMinLendingFund
   kMinLendingFund = 100.0
   # Always keep kKeepFund usd in hand
-  kKeepFund = 400000
+  kKeepFund = 0.01
   #kKeepFund = 0.01
   if available_funds < kMinLendingFund:
     print "Available funds less than minimum lend amount: %.02f vs %.02f" %(available_funds, kMinLendingFund)
@@ -291,9 +291,16 @@ def check_interest(bitfinex, html_file):
   #nemo_init = 100027
   #nemo_percentage = 0.4804433389952496
   #nemo_init_date = datetime.datetime(2016, 3, 23, tzinfo = tz)
-  nemo_init = 40000
-  nemo_percentage = 0.445220928404126
-  nemo_init_date = datetime.datetime(2016, 6, 3, tzinfo = tz)
+  #nemo_init = 40000
+  #nemo_percentage = 0.445220928404126
+  #nemo_init_date = datetime.datetime(2016, 6, 3, tzinfo = tz)
+
+  # on 2016/6/24
+  # m_init = 103359.91
+  nemo_init = 133013.43
+  nemo_percentage = 0.5627260248554258
+  nemo_init_date = datetime.datetime(2016, 6, 24, tzinfo = tz)
+
   nemo_days = (datetime.datetime.fromtimestamp(long(float(parsed[0]['timestamp'])), tz) - nemo_init_date).days + 1
   if nemo_days < 1: nemo_days = 1
   nemo_last_usd = float(parsed[0]['amount']) * nemo_percentage
