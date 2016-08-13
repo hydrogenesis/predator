@@ -220,6 +220,9 @@ def auto_renew(bitfinex, max_ask = 50000):
     days = 7
   elif target_rate > 73:
     days = 30
+  if target_rate < 8:
+    print "Target rate too low. I'd rather wait: %.02f%%" % target_rate
+    return
   print '***** Lending out %f usd at yearly rate %f for %d days ******' %(lend_funds, target_rate, days)
   print bitfinex.new_offer(amount = lend_funds, rate = target_rate, period = days)
   print '***** Offers ******'
