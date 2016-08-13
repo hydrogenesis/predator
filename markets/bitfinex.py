@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os, sys
+import traceback
 if __name__ == '__main__':
   os.chdir(os.path.dirname(sys.argv[0]))
 
@@ -115,6 +116,7 @@ class Bitfinex(Market):
     #s = requests.Session()
     #s.mount('https://', TlsAdapter())
     ret = requests.get(url, headers = headers, verify = verify, timeout = kTimeout)
+    #print ret.text
     return ret.json()
 
   def _post(self, url, headers = None, verify = False):
@@ -198,7 +200,7 @@ def auto_renew(bitfinex, max_ask = 50000):
   balances = bitfinex.balances()
   available_funds = 0
   for account in balances:
-    if account[u'type'] == u'deposit':
+    if account[u'currency'] == u'usd' and account[u'type'] == u'deposit':
       available_funds = float(account[u'available'])
   print available_funds
   # Lend usd when balance is greater than kMinLendingFund
@@ -237,10 +239,14 @@ def get_exchange_rate():
 
 def get_ticker(bitfinex, okc):
   ticker_bitfinex = bitfinex._ticker()
+  bfxusd = bitfinex._ticker("bfxusd")
+  bfxbtc = bitfinex._ticker("bfxbtc")
   ticker_okcoin = okc._ticker()
   result = {
       'USD': ticker_bitfinex['last_price'],
-      'CNY': ticker_okcoin['ticker']['last']
+      'CNY': ticker_okcoin['ticker']['last'],
+      'BFXUSD': bfxusd['last_price'],
+      'BFXBTC': bfxbtc['last_price']
       }
   return result
   
@@ -284,6 +290,27 @@ def check_interest(bitfinex, html_file):
       (float(tickers['USD']), float(tickers['USD'])*ex_rate, \
       float(tickers['CNY']), float(tickers['CNY'])/ex_rate))
   f.write("Bitcoin delta: %.04f%%<br />" % ((btc_rate / ex_rate - 1)*100))
+  balances = bitfinex.balances()
+  total_balance = 0
+  bfx_balance = 0
+  for account in balances:
+    if account[u'currency'] == u'usd' and account[u'type'] == u'deposit':
+      total_balance = float(account[u'amount'])
+    if account[u'currency'] == u'bfx':
+      bfx_balance += float(account[u'amount'])
+  print "TOTAL", total_balance
+  print "TOTAL BFX", bfx_balance
+  f.write("BFX price: $%.04f(¥%.04f), B%.06f($%.04f, ¥%.04f)<br />" % \
+      (float(tickers['BFXUSD']), float(tickers['BFXUSD'])*ex_rate, \
+      float(tickers['BFXBTC']), float(tickers['BFXBTC'])*float(tickers['USD']), \
+      float(tickers['BFXBTC'])*float(tickers['CNY'])))
+  f.write("BFX balance: %.02f = $%.02f(¥%.02f)<br />" % \
+      (bfx_balance, bfx_balance * float(tickers['BFXUSD']), bfx_balance * float(tickers['BFXUSD'])*ex_rate))
+  tbalance = total_balance + bfx_balance * float(tickers['BFXUSD'])
+  f.write("USD balance: $%.02f(¥%.02f)<br />" % \
+      (total_balance, total_balance*ex_rate))
+  f.write("Total balance: $%.02f(¥%.02f)<br />" % \
+      (tbalance, tbalance*ex_rate))
   # in fact it's 100050
   # n_init = 100050
   # m_init = 108195.16
@@ -297,14 +324,31 @@ def check_interest(bitfinex, html_file):
 
   # on 2016/6/24
   # m_init = 103359.91
-  nemo_init = 133013.43
-  nemo_percentage = 0.5627260248554258
-  nemo_init_date = datetime.datetime(2016, 6, 24, tzinfo = tz)
+  # nemo_init = 133013.43
+  # nemo_percentage = 0.5627260248554258
+  # nemo_init_date = datetime.datetime(2016, 6, 24, tzinfo = tz)
+
+  # on 2016/7/26
+  # m_init = 304563.72
+  # nemo_init = 134974.26
+  # nemo_last_percentage = 0.5627260248554258
+  # nemo_percentage = 0.3070821320150764
+  # nemo_init_date = datetime.datetime(2016, 7, 26, tzinfo = tz)
+
+  # on 2016/8/13
+  # m_init = 304563.72
+  nemo_init = 135197.36
+  nemo_last_percentage = 0.3070821320150764
+  nemo_percentage = 0.5397653755389125
+  nemo_init_date = datetime.datetime(2016, 8, 13, tzinfo = tz)
 
   nemo_days = (datetime.datetime.fromtimestamp(long(float(parsed[0]['timestamp'])), tz) - nemo_init_date).days + 1
-  if nemo_days < 1: nemo_days = 1
-  nemo_last_usd = float(parsed[0]['amount']) * nemo_percentage
-  nemo_now_usd = float(parsed[0]['balance']) * nemo_percentage
+  if nemo_days <= 1:
+     nemo_days = 1
+     nemo_last_usd = float(parsed[0]['amount']) * nemo_last_percentage
+  else:
+     nemo_last_usd = float(parsed[0]['amount']) * nemo_percentage
+  nemo_now_usd = total_balance * nemo_percentage
   nemo_gain_usd = nemo_now_usd - nemo_init
   if nemo_gain_usd < 0: nemo_gain_usd = 0
   nemo_last_cny = nemo_last_usd * ex_rate
@@ -341,8 +385,11 @@ if __name__ == '__main__':
       auto_renew(bitfinex, 50000)
       check_interest(bitfinex, 'interest_log.html')
     except Exception as e:
+      exc_type, exc_value, exc_traceback = sys.exc_info()
       print '--------ERROR BEGIN---------'
       print e
+      print repr(traceback.format_exception(exc_type, exc_value,
+			exc_traceback))
       print '--------ERROR END-----------'
       pass
     print "***************** Bitfinex End ********************"
