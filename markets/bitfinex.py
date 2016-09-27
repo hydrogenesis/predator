@@ -206,7 +206,9 @@ def auto_renew(bitfinex, max_ask = 50000):
   # Lend usd when balance is greater than kMinLendingFund
   kMinLendingFund = 100.0
   # Always keep kKeepFund usd in hand
+  #kKeepFund = 136480.18
   kKeepFund = 0.01
+
   #kKeepFund = 0.01
   if available_funds < kMinLendingFund:
     print "Available funds less than minimum lend amount: %.02f vs %.02f" %(available_funds, kMinLendingFund)
@@ -340,31 +342,44 @@ def check_interest(bitfinex, html_file):
 
   # on 2016/8/13
   # m_init = 304563.72
-  nemo_init = 135197.36
-  nemo_last_percentage = 0.3070821320150764
-  nemo_percentage = 0.5397653755389125
-  nemo_init_date = datetime.datetime(2016, 8, 13, tzinfo = tz)
+  # nemo_init = 135197.36
+  # nemo_last_percentage = 0.3070821320150764
+  # nemo_percentage = 0.5397653755389125
+  # nemo_init_date = datetime.datetime(2016, 8, 13, tzinfo = tz)
 
-  nemo_days = (datetime.datetime.fromtimestamp(long(float(parsed[0]['timestamp'])), tz) - nemo_init_date).days + 1
-  if nemo_days <= 1:
-     nemo_days = 1
-     nemo_last_usd = float(parsed[0]['amount']) * nemo_last_percentage
-  else:
-     nemo_last_usd = float(parsed[0]['amount']) * nemo_percentage
-  nemo_now_usd = total_balance * nemo_percentage
-  nemo_gain_usd = nemo_now_usd - nemo_init
-  if nemo_gain_usd < 0: nemo_gain_usd = 0
-  nemo_last_cny = nemo_last_usd * ex_rate
-  nemo_now_cny = nemo_now_usd * ex_rate
-  nemo_gain_cny = nemo_gain_usd * ex_rate
-  nemo_ratio = nemo_gain_usd / nemo_init / nemo_days * 365 * 100
-  nemo_last_ratio = nemo_last_usd / nemo_now_usd * 365 * 100
-  f.write("N last profit: $%.02f(¥%.02f)<br />" % (nemo_last_usd, nemo_last_cny))
-  f.write("N total profit: $%.02f(¥%.02f)<br />" % (nemo_gain_usd, nemo_gain_cny))
-  f.write("N balance: $%.02f(¥%.02f)<br />" % (nemo_now_usd, nemo_now_cny))
-  f.write("N last ratio: %.02f%%<br />" % (nemo_last_ratio))
-  f.write("N total ratio: %.02f%%<br />" % (nemo_ratio))
-  f.write("N days since the beginning: %d<br />" % (nemo_days))
+  # on 2016/9/27
+  # m_init = 116516.25
+  # nemo_init = 136650.81
+  # nemo_last_percentage = 0.5397653755389125
+  # nemo_percentage = 0
+  # nemo_init_date = datetime.datetime(2016, 6, 24, tzinfo = tz)
+
+  # nemo_days = (datetime.datetime.fromtimestamp(long(float(parsed[0]['timestamp'])), tz) - nemo_init_date).days + 1
+  # if nemo_days <= 1:
+  #    nemo_days = 1
+  #    nemo_last_usd = float(parsed[0]['amount']) * nemo_last_percentage
+  # else:
+  #    nemo_last_usd = float(parsed[0]['amount']) * nemo_percentage
+  # nemo_now_usd = total_balance * nemo_percentage
+  # nemo_gain_usd = nemo_now_usd - nemo_init
+  # if nemo_gain_usd < 0: nemo_gain_usd = 0
+  # nemo_last_cny = nemo_last_usd * ex_rate
+  # nemo_now_cny = nemo_now_usd * ex_rate
+  # nemo_gain_cny = nemo_gain_usd * ex_rate
+  # nemo_ratio = nemo_gain_usd / nemo_init / nemo_days * 365 * 100
+  # nemo_last_ratio = nemo_last_usd / nemo_now_usd * 365 * 100
+  # f.write("N last profit: $%.02f(¥%.02f)<br />" % (nemo_last_usd, nemo_last_cny))
+  # f.write("N total profit: $%.02f(¥%.02f)<br />" % (nemo_gain_usd, nemo_gain_cny))
+  # f.write("N balance: $%.02f(¥%.02f)<br />" % (nemo_now_usd, nemo_now_cny))
+  # f.write("N last ratio: %.02f%%<br />" % (nemo_last_ratio))
+  # f.write("N total ratio: %.02f%%<br />" % (nemo_ratio))
+  # f.write("N days since the beginning: %d<br />" % (nemo_days))
+  f.write("N last profit: $%.02f(¥%.02f)<br />" % (0, 0))
+  f.write("N total profit: $%.02f(¥%.02f)<br />" % (6680.94, 44554.58))
+  f.write("N balance: $%.02f(¥%.02f)<br />" % (136650.81, 911310.61))
+  f.write("N last ratio: %.02f%%<br />" % (0))
+  f.write("N total ratio: %.02f%%<br />" % (0.19188270996029072*100))
+  f.write("N days since the beginning: %d<br />" % (93))
   f.write("""<table border="1" cellpadding="0" cellspacing="0" style="font-size:20pt;min-width:900px; ">
            <tr><td>Rate</td><td>Amount($)</td><td>Amount(¥)</td><td>Balance($)</td><td>Balance(¥)</td><td>Date</td></tr>\n
         """)
