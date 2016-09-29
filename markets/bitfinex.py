@@ -305,6 +305,17 @@ def check_interest(bitfinex, html_file):
       bfx_balance += float(account[u'amount'])
   print "TOTAL", total_balance
   print "TOTAL BFX", bfx_balance
+  portfolio_total = 0
+  portfolio_weight = 0
+  portfolio_average = 0
+  credits = bitfinex.credits()
+  for credit in credits:
+    portfolio_weight += (float(credit[u'amount']) * float(credit[u'rate']))
+    portfolio_total += float(credit[u'amount'])
+  if portfolio_total > 0:
+    portfolio_average = portfolio_weight / portfolio_total
+
+  f.write("Current portfolio: %.04f%%<br />" % (portfolio_average))
   f.write("BFX price: $%.04f(¥%.04f), B%.06f($%.04f, ¥%.04f)<br />" % \
       (float(tickers['BFXUSD']), float(tickers['BFXUSD'])*ex_rate, \
       float(tickers['BFXBTC']), float(tickers['BFXBTC'])*float(tickers['USD']), \
