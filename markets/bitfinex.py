@@ -386,7 +386,7 @@ def check_interest(bitfinex, html_file):
   nemo_init = 137701.10
   nemo_last_percentage = 0.5438887805272608
   # nemo_percentage = 0.5428997364059505
-  nemo_percentage = 0.5417250449093163
+  nemo_percentage = 0.5428997578102919
   nemo_init_date = datetime.datetime(2016, 11, 3, tzinfo = tz)
 
   nemo_days = (datetime.datetime.fromtimestamp(long(float(parsed[0]['timestamp'])), tz) - nemo_init_date).days + 1
