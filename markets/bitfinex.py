@@ -246,12 +246,18 @@ def get_ticker(bitfinex, okc):
   ticker_bitfinex = bitfinex._ticker()
   bfxusd = bitfinex._ticker("bfxusd")
   bfxbtc = bitfinex._ticker("bfxbtc")
+  rrtusd = bitfinex._ticker("rrtusd")
+  rrtbtc = bitfinex._ticker("rrtbtc")
   ticker_okcoin = okc._ticker()
+  print bfxusd
+  print bfxbtc
   result = {
       'USD': ticker_bitfinex['last_price'],
       'CNY': ticker_okcoin['ticker']['last'],
       'BFXUSD': bfxusd['last_price'],
-      'BFXBTC': bfxbtc['last_price']
+      'BFXBTC': bfxbtc['last_price'],
+      'RRTUSD': rrtusd['last_price'],
+      'RRTBTC': rrtbtc['last_price']
       }
   return result
   
@@ -298,13 +304,17 @@ def check_interest(bitfinex, html_file):
   balances = bitfinex.balances()
   total_balance = 0
   bfx_balance = 0
+  rrt_balance = 0
   for account in balances:
     if account[u'currency'] == u'usd' and account[u'type'] == u'deposit':
       total_balance = float(account[u'amount'])
     if account[u'currency'] == u'bfx':
       bfx_balance += float(account[u'amount'])
+    if account[u'currency'] == u'rrt':
+      rrt_balance += float(account[u'amount'])
   print "TOTAL", total_balance
   print "TOTAL BFX", bfx_balance
+  print "TOTAL RRT", rrt_balance
   portfolio_total = 0
   portfolio_weight = 0
   portfolio_average = 0
@@ -322,7 +332,13 @@ def check_interest(bitfinex, html_file):
       float(tickers['BFXBTC'])*float(tickers['CNY'])))
   f.write("BFX balance: %.02f = $%.02f(¥%.02f)<br />" % \
       (bfx_balance, bfx_balance * float(tickers['BFXUSD']), bfx_balance * float(tickers['BFXUSD'])*ex_rate))
-  tbalance = total_balance + bfx_balance * float(tickers['BFXUSD'])
+  f.write("RRT price: $%.04f(¥%.04f), B%.06f($%.04f, ¥%.04f)<br />" % \
+      (float(tickers['RRTUSD']), float(tickers['RRTUSD'])*ex_rate, \
+      float(tickers['RRTBTC']), float(tickers['RRTBTC'])*float(tickers['USD']), \
+      float(tickers['RRTBTC'])*float(tickers['CNY'])))
+  f.write("RRT balance: %.02f = $%.02f(¥%.02f)<br />" % \
+      (rrt_balance, rrt_balance * float(tickers['RRTUSD']), rrt_balance * float(tickers['RRTUSD'])*ex_rate))
+  tbalance = total_balance + bfx_balance * float(tickers['BFXUSD']) + rrt_balance * float(tickers['RRTUSD'])
   f.write("USD balance: $%.02f(¥%.02f)<br />" % \
       (total_balance, total_balance*ex_rate))
   f.write("Total balance: $%.02f(¥%.02f)<br />" % \
@@ -365,32 +381,41 @@ def check_interest(bitfinex, html_file):
   # nemo_percentage = 0
   # nemo_init_date = datetime.datetime(2016, 6, 24, tzinfo = tz)
 
-  # nemo_days = (datetime.datetime.fromtimestamp(long(float(parsed[0]['timestamp'])), tz) - nemo_init_date).days + 1
-  # if nemo_days <= 1:
-  #    nemo_days = 1
-  #    nemo_last_usd = float(parsed[0]['amount']) * nemo_last_percentage
-  # else:
-  #    nemo_last_usd = float(parsed[0]['amount']) * nemo_percentage
-  # nemo_now_usd = total_balance * nemo_percentage
-  # nemo_gain_usd = nemo_now_usd - nemo_init
-  # if nemo_gain_usd < 0: nemo_gain_usd = 0
-  # nemo_last_cny = nemo_last_usd * ex_rate
-  # nemo_now_cny = nemo_now_usd * ex_rate
-  # nemo_gain_cny = nemo_gain_usd * ex_rate
-  # nemo_ratio = nemo_gain_usd / nemo_init / nemo_days * 365 * 100
-  # nemo_last_ratio = nemo_last_usd / nemo_now_usd * 365 * 100
-  # f.write("N last profit: $%.02f(¥%.02f)<br />" % (nemo_last_usd, nemo_last_cny))
-  # f.write("N total profit: $%.02f(¥%.02f)<br />" % (nemo_gain_usd, nemo_gain_cny))
-  # f.write("N balance: $%.02f(¥%.02f)<br />" % (nemo_now_usd, nemo_now_cny))
-  # f.write("N last ratio: %.02f%%<br />" % (nemo_last_ratio))
-  # f.write("N total ratio: %.02f%%<br />" % (nemo_ratio))
-  # f.write("N days since the beginning: %d<br />" % (nemo_days))
-  f.write("N last profit: $%.02f(¥%.02f)<br />" % (0, 0))
-  f.write("N total profit: $%.02f(¥%.02f)<br />" % (6680.94, 6680.94*ex_rate))
-  f.write("N balance: $%.02f(¥%.02f)<br />" % (136650.81, 136650.81*ex_rate))
-  f.write("N last ratio: %.02f%%<br />" % (0))
-  f.write("N total ratio: %.02f%%<br />" % (0.19188270996029072*100))
-  f.write("N days since the beginning: %d<br />" % (93))
+  # on 2016/11/3
+  # m_init = 115938.92
+  nemo_init = 137701.10
+  nemo_last_percentage = 0.5438887805272608
+  # nemo_percentage = 0.5428997364059505
+  nemo_percentage = 0.5417250449093163
+  nemo_init_date = datetime.datetime(2016, 11, 3, tzinfo = tz)
+
+  nemo_days = (datetime.datetime.fromtimestamp(long(float(parsed[0]['timestamp'])), tz) - nemo_init_date).days + 1
+  if nemo_days <= 1:
+     nemo_days = 1
+     nemo_last_usd = float(parsed[0]['amount']) * nemo_last_percentage
+  else:
+     nemo_last_usd = float(parsed[0]['amount']) * nemo_percentage
+  nemo_now_usd = total_balance * nemo_percentage
+  nemo_gain_usd = nemo_now_usd - nemo_init
+  if nemo_gain_usd < 0: nemo_gain_usd = 0
+  nemo_last_cny = nemo_last_usd * ex_rate
+  nemo_now_cny = nemo_now_usd * ex_rate
+  nemo_gain_cny = nemo_gain_usd * ex_rate
+  nemo_ratio = nemo_gain_usd / nemo_init / nemo_days * 365 * 100
+  nemo_last_ratio = nemo_last_usd / nemo_now_usd * 365 * 100
+  f.write("N last profit: $%.02f(¥%.02f)<br />" % (nemo_last_usd, nemo_last_cny))
+  f.write("N total profit: $%.02f(¥%.02f)<br />" % (nemo_gain_usd, nemo_gain_cny))
+  f.write("N balance: $%.02f(¥%.02f)<br />" % (nemo_now_usd, nemo_now_cny))
+  f.write("N last ratio: %.02f%%<br />" % (nemo_last_ratio))
+  f.write("N total ratio: %.02f%%<br />" % (nemo_ratio))
+  f.write("N days since the beginning: %d<br />" % (nemo_days))
+  # Nemo fixed
+  # f.write("N last profit: $%.02f(¥%.02f)<br />" % (0, 0))
+  # f.write("N total profit: $%.02f(¥%.02f)<br />" % (6680.94, 6680.94*ex_rate))
+  # f.write("N balance: $%.02f(¥%.02f)<br />" % (136650.81, 136650.81*ex_rate))
+  # f.write("N last ratio: %.02f%%<br />" % (0))
+  # f.write("N total ratio: %.02f%%<br />" % (0.19188270996029072*100))
+  # f.write("N days since the beginning: %d<br />" % (93))
   f.write("""<table border="1" cellpadding="0" cellspacing="0" style="font-size:20pt;min-width:900px; ">
            <tr><td>Rate</td><td>Amount($)</td><td>Amount(¥)</td><td>Balance($)</td><td>Balance(¥)</td><td>Date</td></tr>\n
         """)
