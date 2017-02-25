@@ -13,7 +13,7 @@ from secret import *
 class OKCoin(Market):
   def __init__(self, partner, secret):
     Market.__init__(self, 'OKCoin')
-    self.api = 'www.okcoin.com/api/'
+    self.api = 'www.okcoin.com/api/v1/'
     self.interval = 2
     self.fiat = kCNY
     self.trade_fee = 0.0

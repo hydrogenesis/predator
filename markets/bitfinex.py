@@ -206,7 +206,7 @@ def auto_renew(bitfinex, max_ask = 50000):
   # Lend usd when balance is greater than kMinLendingFund
   kMinLendingFund = 100.0
   # Always keep kKeepFund usd in hand
-  #kKeepFund = 136480.18
+  #kKeepFund = 80000
   kKeepFund = 0.01
 
   #kKeepFund = 0.01
@@ -383,11 +383,41 @@ def check_interest(bitfinex, html_file):
 
   # on 2016/11/3
   # m_init = 115938.92
-  nemo_init = 137701.10
-  nemo_last_percentage = 0.5438887805272608
+  # nemo_init = 137701.10
+  # nemo_last_percentage = 0.5428997364168074
   # nemo_percentage = 0.5428997364059505
-  nemo_percentage = 0.5428997578102919
-  nemo_init_date = datetime.datetime(2016, 11, 3, tzinfo = tz)
+  # nemo_percentage = 0.5428997578102919
+  # nemo_init_date = datetime.datetime(2016, 11, 4, tzinfo = tz)
+
+  # on 2016/11/3
+  # m_init = 118849.28928659
+  # nemo_init = 138362.50
+  # nemo_last_percentage = 0.5428997578102919
+  # nemo_percentage = 0.5379321857048862
+  # nemo_init_date = datetime.datetime(2016, 11, 17, tzinfo = tz)
+
+  # on 2016/11/3
+  # m_init = 118849.28928659
+  # nemo_init = 138362.50
+  # nemo_last_percentage = 0.5379321857048862
+  # nemo_percentage = 0.5379321857048862
+  # nemo_init_date = datetime.datetime(2016, 11, 17, tzinfo = tz)
+
+  # on 2017/1/5
+  # m_init = 252683.35
+  nemo_init = 142182.54
+  nemo_last_percentage = 0.5379321857048862
+  nemo_percentage = 0.3600780508035272
+  nemo_init_date = datetime.datetime(2017, 1, 5, tzinfo = tz)
+
+  # on 2017/2/9
+  # m_init = 164214.15
+  #nemo_init = 145080.04
+  nemo_init = 174047.61
+  nemo_last_percentage = 0.3600780508035272
+  #nemo_percentage = 0.47117256430596005
+  nemo_percentage = 0.5145571423449429
+  nemo_init_date = datetime.datetime(2017, 2, 9, tzinfo = tz)
 
   nemo_days = (datetime.datetime.fromtimestamp(long(float(parsed[0]['timestamp'])), tz) - nemo_init_date).days + 1
   if nemo_days <= 1:
@@ -403,6 +433,8 @@ def check_interest(bitfinex, html_file):
   nemo_gain_cny = nemo_gain_usd * ex_rate
   nemo_ratio = nemo_gain_usd / nemo_init / nemo_days * 365 * 100
   nemo_last_ratio = nemo_last_usd / nemo_now_usd * 365 * 100
+
+  # Nemo natural
   f.write("N last profit: $%.02f(¥%.02f)<br />" % (nemo_last_usd, nemo_last_cny))
   f.write("N total profit: $%.02f(¥%.02f)<br />" % (nemo_gain_usd, nemo_gain_cny))
   f.write("N balance: $%.02f(¥%.02f)<br />" % (nemo_now_usd, nemo_now_cny))
@@ -411,11 +443,12 @@ def check_interest(bitfinex, html_file):
   f.write("N days since the beginning: %d<br />" % (nemo_days))
   # Nemo fixed
   # f.write("N last profit: $%.02f(¥%.02f)<br />" % (0, 0))
-  # f.write("N total profit: $%.02f(¥%.02f)<br />" % (6680.94, 6680.94*ex_rate))
-  # f.write("N balance: $%.02f(¥%.02f)<br />" % (136650.81, 136650.81*ex_rate))
+  # f.write("N total profit: $%.02f(¥%.02f)<br />" % (661.40, 661.40*ex_rate))
+  # f.write("N balance: $%.02f(¥%.02f)<br />" % (138362.50, 138362.50*ex_rate))
   # f.write("N last ratio: %.02f%%<br />" % (0))
-  # f.write("N total ratio: %.02f%%<br />" % (0.19188270996029072*100))
-  # f.write("N days since the beginning: %d<br />" % (93))
+  # f.write("N total ratio: %.02f%%<br />" % (13.49))
+  # f.write("N days since the beginning: %d<br />" % (13))
+
   f.write("""<table border="1" cellpadding="0" cellspacing="0" style="font-size:20pt;min-width:900px; ">
            <tr><td>Rate</td><td>Amount($)</td><td>Amount(¥)</td><td>Balance($)</td><td>Balance(¥)</td><td>Date</td></tr>\n
         """)
