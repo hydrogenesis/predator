@@ -206,8 +206,8 @@ def auto_renew(bitfinex, max_ask = 50000):
   # Lend usd when balance is greater than kMinLendingFund
   kMinLendingFund = 100.0
   # Always keep kKeepFund usd in hand
-  #kKeepFund = 80000
   kKeepFund = 0.01
+  #kKeepFund = 80000
 
   #kKeepFund = 0.01
   if available_funds < kMinLendingFund:
@@ -254,8 +254,8 @@ def get_ticker(bitfinex, okc):
   result = {
       'USD': ticker_bitfinex['last_price'],
       'CNY': ticker_okcoin['ticker']['last'],
-      'BFXUSD': bfxusd['last_price'],
-      'BFXBTC': bfxbtc['last_price'],
+      #'BFXUSD': bfxusd['last_price'],
+      #'BFXBTC': bfxbtc['last_price'],
       'RRTUSD': rrtusd['last_price'],
       'RRTBTC': rrtbtc['last_price']
       }
@@ -279,7 +279,7 @@ def check_interest(bitfinex, html_file):
   f = open(html_file, 'w')
   f.write("""<html><head>
       <title>Bitfinex Funding Fund for NM</title>
-      <link rel="apple-touch-icon" href="nemo.ico" />
+      <link rel="apple-touch-icon" href="/nemo.ico" />
       <meta charset="UTF-8">
       <style>
       tbody tr:nth-child(even)  td { background-color: #eee; }
@@ -306,6 +306,7 @@ def check_interest(bitfinex, html_file):
   bfx_balance = 0
   rrt_balance = 0
   for account in balances:
+    print account
     if account[u'currency'] == u'usd' and account[u'type'] == u'deposit':
       total_balance = float(account[u'amount'])
     if account[u'currency'] == u'bfx':
@@ -313,7 +314,7 @@ def check_interest(bitfinex, html_file):
     if account[u'currency'] == u'rrt':
       rrt_balance += float(account[u'amount'])
   print "TOTAL", total_balance
-  print "TOTAL BFX", bfx_balance
+  #print "TOTAL BFX", bfx_balance
   print "TOTAL RRT", rrt_balance
   portfolio_total = 0
   portfolio_weight = 0
@@ -326,19 +327,20 @@ def check_interest(bitfinex, html_file):
     portfolio_average = portfolio_weight / portfolio_total
 
   f.write("Current portfolio: %.04f%%<br />" % (portfolio_average))
-  f.write("BFX price: $%.04f(¥%.04f), B%.06f($%.04f, ¥%.04f)<br />" % \
-      (float(tickers['BFXUSD']), float(tickers['BFXUSD'])*ex_rate, \
-      float(tickers['BFXBTC']), float(tickers['BFXBTC'])*float(tickers['USD']), \
-      float(tickers['BFXBTC'])*float(tickers['CNY'])))
-  f.write("BFX balance: %.02f = $%.02f(¥%.02f)<br />" % \
-      (bfx_balance, bfx_balance * float(tickers['BFXUSD']), bfx_balance * float(tickers['BFXUSD'])*ex_rate))
+  #f.write("BFX price: $%.04f(¥%.04f), B%.06f($%.04f, ¥%.04f)<br />" % \
+  #    (float(tickers['BFXUSD']), float(tickers['BFXUSD'])*ex_rate, \
+  #    float(tickers['BFXBTC']), float(tickers['BFXBTC'])*float(tickers['USD']), \
+  #    float(tickers['BFXBTC'])*float(tickers['CNY'])))
+  #f.write("BFX balance: %.02f = $%.02f(¥%.02f)<br />" % \
+  #    (bfx_balance, bfx_balance * float(tickers['BFXUSD']), bfx_balance * float(tickers['BFXUSD'])*ex_rate))
   f.write("RRT price: $%.04f(¥%.04f), B%.06f($%.04f, ¥%.04f)<br />" % \
       (float(tickers['RRTUSD']), float(tickers['RRTUSD'])*ex_rate, \
       float(tickers['RRTBTC']), float(tickers['RRTBTC'])*float(tickers['USD']), \
       float(tickers['RRTBTC'])*float(tickers['CNY'])))
   f.write("RRT balance: %.02f = $%.02f(¥%.02f)<br />" % \
       (rrt_balance, rrt_balance * float(tickers['RRTUSD']), rrt_balance * float(tickers['RRTUSD'])*ex_rate))
-  tbalance = total_balance + bfx_balance * float(tickers['BFXUSD']) + rrt_balance * float(tickers['RRTUSD'])
+  #tbalance = total_balance + bfx_balance * float(tickers['BFXUSD']) + rrt_balance * float(tickers['RRTUSD'])
+  tbalance = total_balance + rrt_balance * float(tickers['RRTUSD'])
   f.write("USD balance: $%.02f(¥%.02f)<br />" % \
       (total_balance, total_balance*ex_rate))
   f.write("Total balance: $%.02f(¥%.02f)<br />" % \
@@ -405,19 +407,26 @@ def check_interest(bitfinex, html_file):
 
   # on 2017/1/5
   # m_init = 252683.35
-  nemo_init = 142182.54
-  nemo_last_percentage = 0.5379321857048862
-  nemo_percentage = 0.3600780508035272
-  nemo_init_date = datetime.datetime(2017, 1, 5, tzinfo = tz)
+  # nemo_init = 142182.54
+  # nemo_last_percentage = 0.5379321857048862
+  # nemo_percentage = 0.3600780508035272
+  # nemo_init_date = datetime.datetime(2017, 1, 5, tzinfo = tz)
 
   # on 2017/2/9
   # m_init = 164214.15
   #nemo_init = 145080.04
-  nemo_init = 174047.61
-  nemo_last_percentage = 0.3600780508035272
-  #nemo_percentage = 0.47117256430596005
-  nemo_percentage = 0.5145571423449429
-  nemo_init_date = datetime.datetime(2017, 2, 9, tzinfo = tz)
+  # nemo_init = 174047.61
+  # nemo_last_percentage = 0.3600780508035272
+  # #nemo_percentage = 0.47117256430596005
+  # nemo_percentage = 0.5145571423449429
+  # nemo_init_date = datetime.datetime(2017, 2, 9, tzinfo = tz)
+
+  # on 2017/3/30
+  # m_init = 86865.28
+  nemo_init = 176872.99
+  nemo_last_percentage = 0.5145571423449429
+  nemo_percentage = 0.6706383188150888
+  nemo_init_date = datetime.datetime(2017, 3, 29, tzinfo = tz)
 
   nemo_days = (datetime.datetime.fromtimestamp(long(float(parsed[0]['timestamp'])), tz) - nemo_init_date).days + 1
   if nemo_days <= 1:
