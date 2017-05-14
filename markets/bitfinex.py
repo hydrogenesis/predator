@@ -116,6 +116,8 @@ class Bitfinex(Market):
     return self._get('https://api.cryptowat.ch/' + api)
   def yunbi(self, symbol):
     return self._get('https://plugin.sosobtc.com/widgetembed/data/depth?symbol=yunbi' + symbol)
+  def poloniex(self, api):
+    return self._get('https://poloniex.com/public?command=' + api)
     
   def _get(self, url, headers = None, verify = False):
     #s = requests.Session()
@@ -294,6 +296,8 @@ def check_interest(bitfinex, html_file):
     yunbi_zeccny = bitfinex.yunbi('zeccny')
     yunbi_btccny = bitfinex.yunbi('btccny')
     yunbi_ethcny = bitfinex.yunbi('ethcny')
+    yunbi_sccny = bitfinex.yunbi('sccny')
+    poloniex = bitfinex.poloniex('returnTicker')
   except:
     pass
   exchange_rate_str = get_exchange_rate()
@@ -326,30 +330,32 @@ def check_interest(bitfinex, html_file):
       (float(tickers['USD']), float(tickers['USD'])*ex_rate, \
       float(tickers['CNY']), float(tickers['CNY'])/ex_rate))
   f.write("Bitcoin delta: %.04f%%<br />" % ((btc_rate / ex_rate - 1)*100))
-  #try:
-  f.write("Poloniex zec/btc %.06f<br />" % (cryptowatch['poloniex:zecbtc']))
-  zeccny = (float(yunbi_zeccny['asks'][-1][0]) + float(yunbi_zeccny['bids'][0][0])) / 2.0
-  btccny = (float(yunbi_btccny['asks'][-1][0]) + float(yunbi_btccny['bids'][0][0])) / 2.0
-  ethcny = (float(yunbi_ethcny['asks'][-1][0]) + float(yunbi_ethcny['bids'][0][0])) / 2.0
-  f.write("Yunbi/Poloniex ZEC price: $%.02f(¥%.02f) vs ¥%.02f($%.02f)<br />" % (
-    cryptowatch['poloniex:zecusd'], cryptowatch['poloniex:zecusd'] * ex_rate,
-    zeccny, zeccny / ex_rate,
-  ))
-  f.write("Yunbi/Poloniex ETH price: $%.02f(¥%.02f) vs ¥%.02f($%.02f)<br />" % (
-    cryptowatch['poloniex:ethusd'], cryptowatch['poloniex:ethusd'] * ex_rate,
-    ethcny, ethcny / ex_rate,
-  ))
-  f.write("Yunbi/Poloniex BTC price: $%.02f(¥%.02f) vs ¥%.02f($%.02f)<br />" % (
-    cryptowatch['poloniex:btcusd'], cryptowatch['poloniex:btcusd'] * ex_rate,
-    btccny, btccny / ex_rate,
-  ))
-  f.write("Yunbi/Poloniex delta: btc %.02f%%, eth %.02f%%, zec %.02f%%<br />" % (
-    100*(cryptowatch['poloniex:btcusd'] * ex_rate / btccny - 1),
-    100*(cryptowatch['poloniex:ethusd'] * ex_rate / ethcny - 1),
-    100*(cryptowatch['poloniex:zecusd'] * ex_rate / zeccny - 1)
-  ))
-  #except:
-  #  pass
+  try:
+    zeccny = (float(yunbi_zeccny['asks'][-1][0]) + float(yunbi_zeccny['bids'][0][0])) / 2.0
+    btccny = (float(yunbi_btccny['asks'][-1][0]) + float(yunbi_btccny['bids'][0][0])) / 2.0
+    ethcny = (float(yunbi_ethcny['asks'][-1][0]) + float(yunbi_ethcny['bids'][0][0])) / 2.0
+    sccny = (float(yunbi_sccny['asks'][-1][0]) + float(yunbi_sccny['bids'][0][0])) / 2.0
+    f.write("Poloniex zec/btc %.06f, zec-btc-sc-cny-zec %.02f%%<br />" % (cryptowatch['poloniex:zecbtc'],
+      float(poloniex['BTC_ZEC']['last']) / float(poloniex['BTC_SC']['last']) * sccny / zeccny * 100 - 100))
+    f.write("Yunbi/Poloniex ZEC price: $%.02f(¥%.02f) vs ¥%.02f($%.02f)<br />" % (
+      cryptowatch['poloniex:zecusd'], cryptowatch['poloniex:zecusd'] * ex_rate,
+      zeccny, zeccny / ex_rate,
+    ))
+    f.write("Yunbi/Poloniex ETH price: $%.02f(¥%.02f) vs ¥%.02f($%.02f)<br />" % (
+      cryptowatch['poloniex:ethusd'], cryptowatch['poloniex:ethusd'] * ex_rate,
+      ethcny, ethcny / ex_rate,
+    ))
+    f.write("Yunbi/Poloniex BTC price: $%.02f(¥%.02f) vs ¥%.02f($%.02f)<br />" % (
+      cryptowatch['poloniex:btcusd'], cryptowatch['poloniex:btcusd'] * ex_rate,
+      btccny, btccny / ex_rate,
+    ))
+    f.write("Yunbi/Poloniex delta: btc %.02f%%, eth %.02f%%, zec %.02f%%<br />" % (
+      100*(cryptowatch['poloniex:btcusd'] * ex_rate / btccny - 1),
+      100*(cryptowatch['poloniex:ethusd'] * ex_rate / ethcny - 1),
+      100*(cryptowatch['poloniex:zecusd'] * ex_rate / zeccny - 1)
+    ))
+  except:
+    pass
   balances = bitfinex.balances()
   total_balance = 0
   bfx_balance = 0
