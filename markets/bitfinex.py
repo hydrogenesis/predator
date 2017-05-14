@@ -160,6 +160,7 @@ def auto_renew(bitfinex, max_ask = 50000):
 
   print '***** Offers ******'
   offers = bitfinex.offers()
+  # fund on offer
   for offer in offers:
     print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(offer[u'id'], offer[u'timestamp'], float(offer[u'remaining_amount']), float(offer[u'rate']), offer[u'period'])
 
@@ -190,11 +191,14 @@ def auto_renew(bitfinex, max_ask = 50000):
     print 'unreasonable target_rate:', target_rate
     return
   # begin lending
+  on_offer = 0.0
   for offer in offers:
     if float(offer[u'rate']) > target_rate:
       print '***** Canceling offer *****'
       print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(offer[u'id'], offer[u'timestamp'], float(offer[u'remaining_amount']), float(offer[u'rate']), offer[u'period'])
       print bitfinex.cancel_offer(offer[u'id'])
+    else:
+      on_offer += float(offer[u'remaining_amount'])
   print '***** Available funds ******'
   time.sleep(3)
   balances = bitfinex.balances()
@@ -205,9 +209,10 @@ def auto_renew(bitfinex, max_ask = 50000):
   print available_funds
   # Lend usd when balance is greater than kMinLendingFund
   kMinLendingFund = 100.0
+  # max offer on order
+  kMaxOnLendingOffer = 2500.0
   # Always keep kKeepFund usd in hand
   kKeepFund = 0.01
-  #kKeepFund = 80000
 
   #kKeepFund = 0.01
   if available_funds < kMinLendingFund:
@@ -217,12 +222,19 @@ def auto_renew(bitfinex, max_ask = 50000):
   if lend_funds < 0.01:
     print "Available funds less than reserved amount: %.02f vs %.02f" %(available_funds, kKeepFund)
     return
+  if lend_funds + on_offer > kMaxOnLendingOffer:
+    print "Testing lending %.02f" %lend_funds
+    lend_funds = kMaxOnLendingOffer - on_offer
+    if lend_funds < 0.01:
+      print "No, I'd rather not lend"
+      return
+    print "Yes, I'd lend %.02f" %lend_funds
   days = 2
   if target_rate > 36.5:
     days = 7
   elif target_rate > 73:
     days = 30
-  if target_rate < 3:
+  if target_rate < 8:
     print "Target rate too low. I'd rather not offer: %.02f%%" % target_rate
     return
   print '***** Lending out %f usd at yearly rate %f for %d days ******' %(lend_funds, target_rate, days)
@@ -276,7 +288,8 @@ def check_interest(bitfinex, html_file):
   ex_rate = float(exchange_rate_str)
   tickers = get_ticker(bitfinex, OKCoin('', ''))
   btc_rate = float(tickers['CNY'])/float(tickers['USD'])
-  f = open(html_file, 'w')
+  intermediate_file = html_file + ".tmp"
+  f = open(intermediate_file, 'w')
   f.write("""<html><head>
       <title>Bitfinex Funding Fund for NM</title>
       <link rel="apple-touch-icon" href="/nemo.ico" />
@@ -326,7 +339,7 @@ def check_interest(bitfinex, html_file):
   if portfolio_total > 0:
     portfolio_average = portfolio_weight / portfolio_total
 
-  f.write("Current portfolio: %.04f%%<br />" % (portfolio_average))
+  f.write("Current portfolio: $%.02f on %.04f%%<br />" % (portfolio_total, portfolio_average))
   #f.write("BFX price: $%.04f(¥%.04f), B%.06f($%.04f, ¥%.04f)<br />" % \
   #    (float(tickers['BFXUSD']), float(tickers['BFXUSD'])*ex_rate, \
   #    float(tickers['BFXBTC']), float(tickers['BFXBTC'])*float(tickers['USD']), \
@@ -423,10 +436,17 @@ def check_interest(bitfinex, html_file):
 
   # on 2017/3/30
   # m_init = 86865.28
-  nemo_init = 176872.99
-  nemo_last_percentage = 0.5145571423449429
-  nemo_percentage = 0.6706383188150888
-  nemo_init_date = datetime.datetime(2017, 3, 29, tzinfo = tz)
+  # nemo_init = 176872.99
+  # nemo_last_percentage = 0.5145571423449429
+  # nemo_percentage = 0.6706383188150888
+  # nemo_init_date = datetime.datetime(2017, 3, 29, tzinfo = tz)
+
+  # on 2017/5/14
+  # m_init = 0
+  nemo_init = 178022.63
+  nemo_last_percentage = 0.6706383188150888
+  nemo_percentage = 1.0
+  nemo_init_date = datetime.datetime(2017, 5, 14, tzinfo = tz)
 
   nemo_days = (datetime.datetime.fromtimestamp(long(float(parsed[0]['timestamp'])), tz) - nemo_init_date).days + 1
   if nemo_days <= 1:
@@ -444,19 +464,19 @@ def check_interest(bitfinex, html_file):
   nemo_last_ratio = nemo_last_usd / nemo_now_usd * 365 * 100
 
   # Nemo natural
-  f.write("N last profit: $%.02f(¥%.02f)<br />" % (nemo_last_usd, nemo_last_cny))
-  f.write("N total profit: $%.02f(¥%.02f)<br />" % (nemo_gain_usd, nemo_gain_cny))
-  f.write("N balance: $%.02f(¥%.02f)<br />" % (nemo_now_usd, nemo_now_cny))
-  f.write("N last ratio: %.02f%%<br />" % (nemo_last_ratio))
-  f.write("N total ratio: %.02f%%<br />" % (nemo_ratio))
-  f.write("N days since the beginning: %d<br />" % (nemo_days))
+  #f.write("N last profit: $%.02f(¥%.02f)<br />" % (nemo_last_usd, nemo_last_cny))
+  #f.write("N total profit: $%.02f(¥%.02f)<br />" % (nemo_gain_usd, nemo_gain_cny))
+  #f.write("N balance: $%.02f(¥%.02f)<br />" % (nemo_now_usd, nemo_now_cny))
+  #f.write("N last ratio: %.02f%%<br />" % (nemo_last_ratio))
+  #f.write("N total ratio: %.02f%%<br />" % (nemo_ratio))
+  #f.write("N days since the beginning: %d<br />" % (nemo_days))
   # Nemo fixed
-  # f.write("N last profit: $%.02f(¥%.02f)<br />" % (0, 0))
-  # f.write("N total profit: $%.02f(¥%.02f)<br />" % (661.40, 661.40*ex_rate))
-  # f.write("N balance: $%.02f(¥%.02f)<br />" % (138362.50, 138362.50*ex_rate))
-  # f.write("N last ratio: %.02f%%<br />" % (0))
-  # f.write("N total ratio: %.02f%%<br />" % (13.49))
-  # f.write("N days since the beginning: %d<br />" % (13))
+  f.write("N last profit: $%.02f(¥%.02f)<br />" % (0, 0))
+  f.write("N total profit: $%.02f(¥%.02f)<br />" % (1099.39, 1099.39*ex_rate))
+  f.write("N balance: $%.02f(¥%.02f)<br />" % (177972.38, 177972.38*ex_rate))
+  f.write("N last ratio: %.02f%%<br />" % (4.92))
+  f.write("N total ratio: %.02f%%<br />" % (6.13))
+  f.write("N days since the beginning: %d<br />" % (37))
 
   f.write("""<table border="1" cellpadding="0" cellspacing="0" style="font-size:20pt;min-width:900px; ">
            <tr><td>Rate</td><td>Amount($)</td><td>Amount(¥)</td><td>Balance($)</td><td>Balance(¥)</td><td>Date</td></tr>\n
@@ -470,6 +490,7 @@ def check_interest(bitfinex, html_file):
         datetime.datetime.fromtimestamp(long(float(item['timestamp'])), tz).strftime("%Y/%m/%d %H:%M:%S")))
   f.write("</table></body></html>")
   f.close()
+  os.rename(intermediate_file, html_file)
 
 if __name__ == '__main__':
   # this is not a unit test, but a useful feature
@@ -478,7 +499,7 @@ if __name__ == '__main__':
   while True:
     print "***************** Bitfinex Begin ********************"
     try:
-      auto_renew(bitfinex, 50000)
+      auto_renew(bitfinex, 25000)
       check_interest(bitfinex, 'interest_log.html')
     except Exception as e:
       exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -489,7 +510,7 @@ if __name__ == '__main__':
       print '--------ERROR END-----------'
       pass
     print "***************** Bitfinex End ********************"
-    time.sleep(60)
+    time.sleep(1)
 
   # bitfinex.update_status()
   # print bitfinex.unified_bids
