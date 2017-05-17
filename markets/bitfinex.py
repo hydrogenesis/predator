@@ -217,7 +217,7 @@ def auto_renew(bitfinex, max_ask = 50000):
   # Lend usd when balance is greater than kMinLendingFund
   kMinLendingFund = 100.0
   # max offer on order
-  kMaxOnLendingOffer = 2500.0
+  kMaxOnLendingOffer = 1000.0
   # Always keep kKeepFund usd in hand
   kKeepFund = 0.01
 
@@ -506,19 +506,19 @@ def check_interest(bitfinex, html_file):
   nemo_last_ratio = nemo_last_usd / nemo_now_usd * 365 * 100
 
   # Nemo natural
-  #f.write("N last profit: $%.02f(¥%.02f)<br />" % (nemo_last_usd, nemo_last_cny))
-  #f.write("N total profit: $%.02f(¥%.02f)<br />" % (nemo_gain_usd, nemo_gain_cny))
-  #f.write("N balance: $%.02f(¥%.02f)<br />" % (nemo_now_usd, nemo_now_cny))
-  #f.write("N last ratio: %.02f%%<br />" % (nemo_last_ratio))
-  #f.write("N total ratio: %.02f%%<br />" % (nemo_ratio))
-  #f.write("N days since the beginning: %d<br />" % (nemo_days))
+  f.write("N last profit: $%.02f(¥%.02f)<br />" % (nemo_last_usd, nemo_last_cny))
+  f.write("N total profit: $%.02f(¥%.02f)<br />" % (nemo_gain_usd, nemo_gain_cny))
+  f.write("N balance: $%.02f(¥%.02f)<br />" % (nemo_now_usd, nemo_now_cny))
+  f.write("N last ratio: %.02f%%<br />" % (nemo_last_ratio))
+  f.write("N total ratio: %.02f%%<br />" % (nemo_ratio))
+  f.write("N days since the beginning: %d<br />" % (nemo_days))
   # Nemo fixed
-  f.write("N last profit: $%.02f(¥%.02f)<br />" % (0, 0))
-  f.write("N total profit: $%.02f(¥%.02f)<br />" % (1099.39, 1099.39*ex_rate))
-  f.write("N balance: $%.02f(¥%.02f)<br />" % (177972.38, 177972.38*ex_rate))
-  f.write("N last ratio: %.02f%%<br />" % (4.92))
-  f.write("N total ratio: %.02f%%<br />" % (6.13))
-  f.write("N days since the beginning: %d<br />" % (37))
+  #f.write("N last profit: $%.02f(¥%.02f)<br />" % (0, 0))
+  #f.write("N total profit: $%.02f(¥%.02f)<br />" % (1099.39, 1099.39*ex_rate))
+  #f.write("N balance: $%.02f(¥%.02f)<br />" % (177972.38, 177972.38*ex_rate))
+  #f.write("N last ratio: %.02f%%<br />" % (4.92))
+  #f.write("N total ratio: %.02f%%<br />" % (6.13))
+  #f.write("N days since the beginning: %d<br />" % (37))
 
   f.write("""<table border="1" cellpadding="0" cellspacing="0" style="font-size:20pt;min-width:900px; ">
            <tr><td>Rate</td><td>Amount($)</td><td>Amount(¥)</td><td>Balance($)</td><td>Balance(¥)</td><td>Date</td></tr>\n
@@ -541,7 +541,7 @@ if __name__ == '__main__':
   while True:
     print "***************** Bitfinex Begin ********************"
     try:
-      auto_renew(bitfinex, 25000)
+      auto_renew(bitfinex, 70000)
       check_interest(bitfinex, 'interest_log.html')
     except Exception as e:
       exc_type, exc_value, exc_traceback = sys.exc_info()
