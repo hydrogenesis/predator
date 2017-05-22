@@ -25,6 +25,9 @@ from tlsadapter import *
 sys.path.append('../..')
 from secret import *
 
+kTimeout=30
+kMaxRetries = 10
+
 class Bitfinex(Market):
   def __init__(self, key, secret):
     Market.__init__(self, 'Bitfinex')
@@ -122,7 +125,22 @@ class Bitfinex(Market):
   def _get(self, url, headers = None, verify = False):
     #s = requests.Session()
     #s.mount('https://', TlsAdapter())
-    ret = requests.get(url, headers = headers, verify = verify, timeout = kTimeout)
+    fail = True
+    retry = 0
+    while fail == True and retry <= kMaxRetries:
+      try:
+	s = requests.Session()
+	a = requests.adapters.HTTPAdapter(max_retries=1)
+        b = requests.adapters.HTTPAdapter(max_retries=1)
+	s.mount('http://', a)
+	s.mount('https://', b)
+        retry += 1
+	ret = s.get(url, headers = headers, verify = verify, timeout = kTimeout)
+        ret_json = ret.json()
+        fail = False
+      except:
+        time.sleep(0.1)
+        pass
     #print ret.text
     return ret.json()
 
@@ -217,7 +235,7 @@ def auto_renew(bitfinex, max_ask = 50000):
   # Lend usd when balance is greater than kMinLendingFund
   kMinLendingFund = 100.0
   # max offer on order
-  kMaxOnLendingOffer = 1000.0
+  kMaxOnLendingOffer = 2000.0
   # Always keep kKeepFund usd in hand
   kKeepFund = 0.01
 
@@ -294,11 +312,20 @@ def check_interest(bitfinex, html_file):
   try:
     cryptowatch = bitfinex.cryptowatch('markets/prices')['result']
     yunbi_zeccny = bitfinex.yunbi('zeccny')
+    time.sleep(1)
     yunbi_btccny = bitfinex.yunbi('btccny')
+    time.sleep(1)
     yunbi_ethcny = bitfinex.yunbi('ethcny')
+    time.sleep(1)
     yunbi_sccny = bitfinex.yunbi('sccny')
     poloniex = bitfinex.poloniex('returnTicker')
-  except:
+  except Exception as e:
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    print '--------ERROR BEGIN---------'
+    print e
+    print repr(traceback.format_exception(exc_type, exc_value,
+      		exc_traceback))
+    print '--------ERROR END-----------'
     pass
   exchange_rate_str = get_exchange_rate()
   ex_rate = float(exchange_rate_str)
@@ -337,24 +364,30 @@ def check_interest(bitfinex, html_file):
     sccny = (float(yunbi_sccny['asks'][-1][0]) + float(yunbi_sccny['bids'][0][0])) / 2.0
     f.write("Poloniex zec/btc %.06f, zec-btc-sc-cny-zec %.02f%%<br />" % (cryptowatch['poloniex:zecbtc'],
       float(poloniex['BTC_ZEC']['last']) / float(poloniex['BTC_SC']['last']) * sccny / zeccny * 100 - 100))
-    f.write("Yunbi/Poloniex ZEC price: $%.02f(¥%.02f) vs ¥%.02f($%.02f)<br />" % (
+    f.write("Poloniex/Yunbi ZEC price: $%.02f(¥%.02f) vs ¥%.02f($%.02f)<br />" % (
       cryptowatch['poloniex:zecusd'], cryptowatch['poloniex:zecusd'] * ex_rate,
       zeccny, zeccny / ex_rate,
     ))
-    f.write("Yunbi/Poloniex ETH price: $%.02f(¥%.02f) vs ¥%.02f($%.02f)<br />" % (
+    f.write("Poloniex/Yunbi ETH price: $%.02f(¥%.02f) vs ¥%.02f($%.02f)<br />" % (
       cryptowatch['poloniex:ethusd'], cryptowatch['poloniex:ethusd'] * ex_rate,
       ethcny, ethcny / ex_rate,
     ))
-    f.write("Yunbi/Poloniex BTC price: $%.02f(¥%.02f) vs ¥%.02f($%.02f)<br />" % (
+    f.write("Poloniex/Yunbi BTC price: $%.02f(¥%.02f) vs ¥%.02f($%.02f)<br />" % (
       cryptowatch['poloniex:btcusd'], cryptowatch['poloniex:btcusd'] * ex_rate,
       btccny, btccny / ex_rate,
     ))
-    f.write("Yunbi/Poloniex delta: btc %.02f%%, eth %.02f%%, zec %.02f%%<br />" % (
+    f.write("Poloniex/Yunbi delta: btc %.02f%%, eth %.02f%%, zec %.02f%%<br />" % (
       100*(cryptowatch['poloniex:btcusd'] * ex_rate / btccny - 1),
       100*(cryptowatch['poloniex:ethusd'] * ex_rate / ethcny - 1),
       100*(cryptowatch['poloniex:zecusd'] * ex_rate / zeccny - 1)
     ))
-  except:
+  except Exception as e:
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    print '--------YUNBI BEGIN---------'
+    print e
+    print repr(traceback.format_exception(exc_type, exc_value,
+      		exc_traceback))
+    print '--------YUNBI END-----------'
     pass
   balances = bitfinex.balances()
   total_balance = 0
@@ -541,7 +574,7 @@ if __name__ == '__main__':
   while True:
     print "***************** Bitfinex Begin ********************"
     try:
-      auto_renew(bitfinex, 70000)
+      auto_renew(bitfinex, 20000)
       check_interest(bitfinex, 'interest_log.html')
     except Exception as e:
       exc_type, exc_value, exc_traceback = sys.exc_info()
