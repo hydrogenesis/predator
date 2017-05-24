@@ -313,6 +313,8 @@ def check_interest(bitfinex, html_file):
     cryptowatch = bitfinex.cryptowatch('markets/prices')['result']
     yunbi_zeccny = bitfinex.yunbi('zeccny')
     time.sleep(1)
+    yunbi_etccny = bitfinex.yunbi('etccny')
+    time.sleep(1)
     yunbi_btccny = bitfinex.yunbi('btccny')
     time.sleep(1)
     yunbi_ethcny = bitfinex.yunbi('ethcny')
@@ -361,6 +363,7 @@ def check_interest(bitfinex, html_file):
     zeccny = (float(yunbi_zeccny['asks'][-1][0]) + float(yunbi_zeccny['bids'][0][0])) / 2.0
     btccny = (float(yunbi_btccny['asks'][-1][0]) + float(yunbi_btccny['bids'][0][0])) / 2.0
     ethcny = (float(yunbi_ethcny['asks'][-1][0]) + float(yunbi_ethcny['bids'][0][0])) / 2.0
+    etccny = (float(yunbi_etccny['asks'][-1][0]) + float(yunbi_etccny['bids'][0][0])) / 2.0
     sccny = (float(yunbi_sccny['asks'][-1][0]) + float(yunbi_sccny['bids'][0][0])) / 2.0
     f.write("Poloniex zec/btc %.06f, zec-btc-sc-cny-zec %.02f%%<br />" % (cryptowatch['poloniex:zecbtc'],
       float(poloniex['BTC_ZEC']['last']) / float(poloniex['BTC_SC']['last']) * sccny / zeccny * 100 - 100))
@@ -376,10 +379,20 @@ def check_interest(bitfinex, html_file):
       cryptowatch['poloniex:btcusd'], cryptowatch['poloniex:btcusd'] * ex_rate,
       btccny, btccny / ex_rate,
     ))
-    f.write("Poloniex/Yunbi delta: btc %.02f%%, eth %.02f%%, zec %.02f%%<br />" % (
+    f.write("Poloniex/Yunbi ETC price: $%.02f(¥%.02f) vs ¥%.02f($%.02f)<br />" % (
+      cryptowatch['poloniex:etcusd'], cryptowatch['poloniex:etcusd'] * ex_rate,
+      etccny, etccny / ex_rate,
+    ))
+    sc_usd = float(poloniex['BTC_SC']['last']) * float(poloniex['USDT_BTC']['last'])
+    f.write("Poloniex/Yunbi SiaCoin price: $%.06f(¥%.06f) vs ¥%.06f($%.06f)<br />" % (
+      sc_usd, sc_usd * ex_rate, sccny, sccny / ex_rate
+    ))
+    f.write("Poloniex/Yunbi delta: btc %.02f%%, eth %.02f%%, zec %.02f%%, etc %.02f%%, siacoin %.02f%%<br />" % (
       100*(cryptowatch['poloniex:btcusd'] * ex_rate / btccny - 1),
       100*(cryptowatch['poloniex:ethusd'] * ex_rate / ethcny - 1),
-      100*(cryptowatch['poloniex:zecusd'] * ex_rate / zeccny - 1)
+      100*(cryptowatch['poloniex:zecusd'] * ex_rate / zeccny - 1),
+      100*(cryptowatch['poloniex:etcusd'] * ex_rate / etccny - 1),
+      100*(sc_usd * ex_rate / sccny - 1)
     ))
   except Exception as e:
     exc_type, exc_value, exc_traceback = sys.exc_info()
