@@ -26,7 +26,7 @@ sys.path.append('../..')
 from secret import *
 
 kTimeout=30
-kMaxRetries = 10
+kMaxRetries = 5
 
 class Bitfinex(Market):
   def __init__(self, key, secret):
@@ -129,17 +129,12 @@ class Bitfinex(Market):
     retry = 0
     while fail == True and retry <= kMaxRetries:
       try:
-	s = requests.Session()
-	a = requests.adapters.HTTPAdapter(max_retries=1)
-        b = requests.adapters.HTTPAdapter(max_retries=1)
-	s.mount('http://', a)
-	s.mount('https://', b)
         retry += 1
-	ret = s.get(url, headers = headers, verify = verify, timeout = kTimeout)
+	ret = requests.get(url, headers = headers, verify = verify, timeout = kTimeout)
         ret_json = ret.json()
         fail = False
       except:
-        time.sleep(0.1)
+        time.sleep(0.3)
         pass
     #print ret.text
     return ret.json()
