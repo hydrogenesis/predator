@@ -8,6 +8,7 @@ if __name__ == '__main__':
 
 from decimal import Decimal
 import requests
+import thread
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from datetime import timedelta, date
 import json
@@ -24,9 +25,14 @@ from okcoin import OKCoin
 from tlsadapter import *
 sys.path.append('../..')
 from secret import *
+from multiprocessing import Process, Value, Lock
 
 kTimeout=30
 kMaxRetries = 5
+localproxy = {
+    'http': 'socks5://localhost:7777',
+    'https': 'socks5://localhost:7777'
+}
 
 class Bitfinex(Market):
   def __init__(self, key, secret):
@@ -40,6 +46,15 @@ class Bitfinex(Market):
     self.max_lag = 20 # maximum lag of market
     self.key = key
     self.secret = secret
+    self.nonce = long(time.time() * 100000)
+    self.nonce_lock = Lock()
+
+  def get_nonce(self):
+    n = -1
+    with self.nonce_lock:
+      n = self.nonce
+      self.nonce += 1
+    return n
 
   def update_book(self):
     Market.update_book(self)
@@ -60,7 +75,7 @@ class Bitfinex(Market):
   def balances(self):
     payload = {}
     payload["request"] = "/v1/balances"
-    payload["nonce"] = str(long(time.time() * 100000))
+    payload["nonce"] = str(self.get_nonce())
     headers = self._prepare_payload(True, payload)
     return self._get("https://" + self.api + "/v1/balances", headers=headers, verify=False)
 
@@ -70,14 +85,14 @@ class Bitfinex(Market):
   def offers(self):
     payload = {}
     payload["request"] = "/v1/offers"
-    payload["nonce"] = str(long(time.time() * 100000))
+    payload["nonce"] = str(self.get_nonce())
     headers = self._prepare_payload(True, payload)
     return self._get("https://" + self.api + "/v1/offers", headers=headers, verify=False)
 
   def cancel_offer(self, offer_id):
     payload = {}
     payload["request"] = "/v1/offer/cancel"
-    payload["nonce"] = str(long(time.time() * 100000))
+    payload["nonce"] = str(self.get_nonce())
     payload["offer_id"] = offer_id
     headers = self._prepare_payload(True, payload)
     return self._post("https://" + self.api + "/v1/offer/cancel", headers=headers, verify=False)
@@ -85,7 +100,7 @@ class Bitfinex(Market):
   def new_offer(self, amount, rate, period = 2, currency = 'USD', direction = 'lend'):
     payload = {}
     payload["request"] = "/v1/offer/new"
-    payload["nonce"] = str(long(time.time() * 100000))
+    payload["nonce"] = str(self.get_nonce())
     payload["currency"] = currency
     payload["amount"] = '%.02f' %amount
     payload["rate"] = '%.04f' %rate
@@ -98,7 +113,7 @@ class Bitfinex(Market):
   def credits(self):
     payload = {}
     payload["request"] = "/v1/credits"
-    payload["nonce"] = str(long(time.time() * 100000))
+    payload["nonce"] = str(self.get_nonce())
     headers = self._prepare_payload(True, payload)
     return self._get("https://" + self.api + "/v1/credits", headers=headers, verify=False)
 
@@ -109,7 +124,7 @@ class Bitfinex(Market):
     d = datetime.datetime.now() + timedelta(days=since_days)
     payload["since"] = str(long((d - datetime.datetime(1970, 1, 1)).total_seconds()))
     payload["limit"] = limit
-    payload["nonce"] = str(long(time.time() * 100000))
+    payload["nonce"] = str(self.get_nonce())
     payload["wallet"] = "deposit"
     headers = self._prepare_payload(True, payload)
     print payload
@@ -118,11 +133,11 @@ class Bitfinex(Market):
   def cryptowatch(self, api):
     return self._get('https://api.cryptowat.ch/' + api)
   def yunbi(self, symbol):
-    return self._get('https://plugin.sosobtc.com/widgetembed/data/depth?symbol=yunbi' + symbol)
+    return self._get('https://plugin.sosobtc.com/widgetembed/data/depth?symbol=yunbi' + symbol, proxies = localproxy)
   def poloniex(self, api):
     return self._get('https://poloniex.com/public?command=' + api)
     
-  def _get(self, url, headers = None, verify = False):
+  def _get(self, url, headers = None, verify = False, proxies = None):
     #s = requests.Session()
     #s.mount('https://', TlsAdapter())
     fail = True
@@ -130,7 +145,7 @@ class Bitfinex(Market):
     while fail == True and retry <= kMaxRetries:
       try:
         retry += 1
-	ret = requests.get(url, headers = headers, verify = verify, timeout = kTimeout)
+	ret = requests.get(url, headers = headers, verify = verify, timeout = kTimeout, proxies = proxies)
         ret_json = ret.json()
         fail = False
       except:
@@ -170,22 +185,26 @@ class Bitfinex(Market):
           "X-BFX-PAYLOAD": data,
       }
 
-def auto_renew(bitfinex, max_ask = 50000):
-  '''Automatically places the offer at a rate that is maximum
-     below |max_ask| depth of USD'''
-  print '***** Credits ******'
-  credits = bitfinex.credits()
-  for credit in credits:
-    print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(credit[u'id'], credit[u'timestamp'], float(credit[u'amount']), float(credit[u'rate']), credit[u'period'])
+def strategy_fixed_depth(currency, params):
+  '''
+  Lend usd when balance is greater than |min_lend|
+  Max offer on order |max_lend|
+  Always keep |keep_fund| in hand
+  '''
+  print "Performing fixed depth lending strategy for", currency
 
   print '***** Offers ******'
   offers = bitfinex.offers()
+  print offers
+  market_offers = []
   # fund on offer
   for offer in offers:
+    if offer[u'currency'].lower() != currency.lower(): continue
+    market_offers.append(offer)
     print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(offer[u'id'], offer[u'timestamp'], float(offer[u'remaining_amount']), float(offer[u'rate']), offer[u'period'])
+  offers = market_offers
 
-  asks = bitfinex.lendbook('usd')[u'asks']
-  max_rate = 10000.0
+  asks = bitfinex.lendbook(currency.lower())[u'asks']
   ask_sum = 0.0
   for ask in asks:
     # TODO: bypassing flash return rate, EXPERIMENTAL
@@ -199,7 +218,7 @@ def auto_renew(bitfinex, max_ask = 50000):
           print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(offer[u'id'], offer[u'timestamp'], float(offer[u'remaining_amount']), float(offer[u'rate']), offer[u'period'])
           continue
     max_rate = float(ask[u'rate'])
-    if ask_sum > max_ask:
+    if ask_sum > params['max_depth']:
       break
     ask_sum += float(ask[u'amount'])
   target_rate = max_rate - 0.05
@@ -220,31 +239,25 @@ def auto_renew(bitfinex, max_ask = 50000):
     else:
       on_offer += float(offer[u'remaining_amount'])
   print '***** Available funds ******'
-  time.sleep(3)
+  time.sleep(2)
   balances = bitfinex.balances()
   available_funds = 0
   for account in balances:
-    if account[u'currency'] == u'usd' and account[u'type'] == u'deposit':
+    if account[u'currency'].lower() == currency.lower() and account[u'type'] == u'deposit':
       available_funds = float(account[u'available'])
-  print available_funds
-  # Lend usd when balance is greater than kMinLendingFund
-  kMinLendingFund = 100.0
-  # max offer on order
-  kMaxOnLendingOffer = 2000.0
-  # Always keep kKeepFund usd in hand
-  kKeepFund = 0.01
+  print available_funds, currency
 
   #kKeepFund = 0.01
-  if available_funds < kMinLendingFund:
-    print "Available funds less than minimum lend amount: %.02f vs %.02f" %(available_funds, kMinLendingFund)
+  if available_funds < params['min_lend']:
+    print "Available funds less than minimum lend amount: %.02f vs %.02f" %(available_funds, params['min_lend'])
     return
-  lend_funds = available_funds - kKeepFund
+  lend_funds = available_funds - params['keep_fund']
   if lend_funds < 0.01:
-    print "Available funds less than reserved amount: %.02f vs %.02f" %(available_funds, kKeepFund)
+    print "Available funds less than reserved amount: %.02f vs %.02f" %(available_funds, params['keep_fund'])
     return
-  if lend_funds + on_offer > kMaxOnLendingOffer:
+  if lend_funds + on_offer > params['max_lend']:
     print "Testing lending %.02f" %lend_funds
-    lend_funds = kMaxOnLendingOffer - on_offer
+    lend_funds = params['max_lend'] - on_offer
     if lend_funds < 0.01:
       print "No, I'd rather not lend"
       return
@@ -257,13 +270,35 @@ def auto_renew(bitfinex, max_ask = 50000):
   if target_rate < 8:
     print "Target rate too low. I'd rather not offer: %.02f%%" % target_rate
     return
-  print '***** Lending out %f usd at yearly rate %f for %d days ******' %(lend_funds, target_rate, days)
-  print bitfinex.new_offer(amount = lend_funds, rate = target_rate, period = days)
+  print '***** Lending out %f %s at yearly rate %f for %d days ******' %(lend_funds, currency, target_rate, days)
+  print bitfinex.new_offer(amount = lend_funds, rate = target_rate, currency = currency, period = days)
   print '***** Offers ******'
   time.sleep(3)
   offers = bitfinex.offers()
   for offer in offers:
-    print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(offer[u'id'], offer[u'timestamp'], float(offer[u'remaining_amount']), float(offer[u'rate']), offer[u'period'])
+    if offer['currency'] == currency:
+      print "%s, id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(currency, offer[u'id'], offer[u'timestamp'], float(offer[u'remaining_amount']), float(offer[u'rate']), offer[u'period'])
+
+def run_strategy_fixed_depth(currency, params):
+  while 1:
+    strategy_fixed_depth(currency, params)
+    time.sleep(1)
+
+def auto_renew(bitfinex, market_params):
+  '''Automatically places the offer at a rate that is maximum
+     below |max_ask| depth of USD'''
+  print '***** Credits ******'
+  credits = bitfinex.credits()
+  for credit in credits:
+    print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(credit[u'id'], credit[u'timestamp'], float(credit[u'amount']), float(credit[u'rate']), credit[u'period'])
+  for currency in ['ZEC', 'USD', 'BTC', 'ETH']:
+    strategy_fixed_depth(currency, market_params[currency])
+    #try:
+    #  thread.start_new_thread(run_strategy_fixed_depth, (currency, market_params[currency]))
+    #  time.sleep(3.3)
+    #  print "Started thread for currency", currency
+    #except:
+    #  print "error: unable to start thread for currency", currency
 
 def get_exchange_rate():
   url = 'http://download.finance.yahoo.com/d/quotes.csv?e=.csv&f=sl1d1t1&s=USDCNY=x'
@@ -579,17 +614,24 @@ if __name__ == '__main__':
   # this is not a unit test, but a useful feature
   requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
   bitfinex = Bitfinex(bitfinex_key, bitfinex_secret)
+  market_params = {
+    'USD': { 'max_depth': 20000.0, 'max_lend': 2000.0, 'min_lend': 100.0, 'keep_fund': 0.01, 'max_rate': 10000.0 },
+    'ZEC': { 'max_depth': 200.0, 'max_lend': 20.0, 'min_lend': 0.1, 'keep_fund': 0.01, 'max_rate': 10000.0 },
+    'BTC': { 'max_depth': 100.0, 'max_lend': 1.8, 'min_lend': 0.03, 'keep_fund': 0.001, 'max_rate': 10000.0 },
+    'ETH': { 'max_depth': 1000.0, 'max_lend': 30.0, 'min_lend': 0.1, 'keep_fund': 0.01, 'max_rate': 10000.0 }
+  }
+  auto_renew(bitfinex, market_params)
   while True:
     print "***************** Bitfinex Begin ********************"
+    #check_interest(bitfinex, 'interest_log.html')
     try:
-      auto_renew(bitfinex, 20000)
       check_interest(bitfinex, 'interest_log.html')
     except Exception as e:
       exc_type, exc_value, exc_traceback = sys.exc_info()
       print '--------ERROR BEGIN---------'
       print e
       print repr(traceback.format_exception(exc_type, exc_value,
-			exc_traceback))
+        		exc_traceback))
       print '--------ERROR END-----------'
       pass
     print "***************** Bitfinex End ********************"
