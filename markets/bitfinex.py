@@ -34,6 +34,21 @@ localproxy = {
     'https': 'socks5://localhost:7777'
 }
 
+CurrencySymbol = {
+    'ZEC': u'\u24E9',
+    'BTC': u'\u20BF',
+    'ETH': u'\u039E',
+    'USD': u'$'
+}
+
+def Truncate(f, n):
+    '''Truncates/pads a float f to n decimal places without rounding'''
+    s = '{}'.format(f)
+    if 'e' in s or 'E' in s:
+        return '{0:.{1}f}'.format(f, n)
+    i, p, d = s.partition('.')
+    return '.'.join([i, (d+'0'*n)[:n]])
+
 class Bitfinex(Market):
   def __init__(self, key, secret):
     Market.__init__(self, 'Bitfinex')
@@ -102,7 +117,7 @@ class Bitfinex(Market):
     payload["request"] = "/v1/offer/new"
     payload["nonce"] = str(self.get_nonce())
     payload["currency"] = currency
-    payload["amount"] = '%.02f' %amount
+    payload["amount"] = Truncate(amount, 6)
     payload["rate"] = '%.04f' %rate
     payload["period"] = period
     payload["direction"] = direction
@@ -447,17 +462,22 @@ def check_interest(bitfinex, html_file):
   print "TOTAL", total_balance
   #print "TOTAL BFX", bfx_balance
   print "TOTAL RRT", rrt_balance
-  portfolio_total = 0
-  portfolio_weight = 0
-  portfolio_average = 0
+  portfolio_total = {}
+  portfolio_weight = {}
+  portfolio_average = {}
   credits = bitfinex.credits()
   for credit in credits:
-    portfolio_weight += (float(credit[u'amount']) * float(credit[u'rate']))
-    portfolio_total += float(credit[u'amount'])
-  if portfolio_total > 0:
-    portfolio_average = portfolio_weight / portfolio_total
-
-  f.write("Current portfolio: $%.02f on %.04f%%<br />" % (portfolio_total, portfolio_average))
+    if not credit[u'currency'] in portfolio_total:
+      portfolio_total[credit[u'currency']] = 0
+      portfolio_weight[credit[u'currency']] = 0
+      portfolio_average[credit[u'currency']] = 0
+    portfolio_weight[credit[u'currency']] += (float(credit[u'amount']) * float(credit[u'rate']))
+    portfolio_total[credit[u'currency']] += float(credit[u'amount'])
+  for currency in portfolio_total:
+    if portfolio_total[currency] > 0:
+      portfolio_average[currency] = portfolio_weight[currency] / portfolio_total[currency]
+      info = "Current portfolio for %s: %s%.02f on %.04f%%<br />" % (currency, CurrencySymbol[currency.upper()], portfolio_total[currency], portfolio_average[currency])
+      f.write(info.encode('utf-8'))
   #f.write("BFX price: $%.04f(¥%.04f), B%.06f($%.04f, ¥%.04f)<br />" % \
   #    (float(tickers['BFXUSD']), float(tickers['BFXUSD'])*ex_rate, \
   #    float(tickers['BFXBTC']), float(tickers['BFXBTC'])*float(tickers['USD']), \
@@ -616,15 +636,15 @@ if __name__ == '__main__':
   bitfinex = Bitfinex(bitfinex_key, bitfinex_secret)
   market_params = {
     'USD': { 'max_depth': 20000.0, 'max_lend': 2000.0, 'min_lend': 100.0, 'keep_fund': 0.01, 'max_rate': 10000.0 },
-    'ZEC': { 'max_depth': 200.0, 'max_lend': 20.0, 'min_lend': 0.1, 'keep_fund': 0.01, 'max_rate': 10000.0 },
+    'ZEC': { 'max_depth': 100.0, 'max_lend': 10.0, 'min_lend': 0.1, 'keep_fund': 0.01, 'max_rate': 10000.0 },
     'BTC': { 'max_depth': 100.0, 'max_lend': 1.8, 'min_lend': 0.03, 'keep_fund': 0.001, 'max_rate': 10000.0 },
     'ETH': { 'max_depth': 1000.0, 'max_lend': 30.0, 'min_lend': 0.1, 'keep_fund': 0.01, 'max_rate': 10000.0 }
   }
-  auto_renew(bitfinex, market_params)
   while True:
     print "***************** Bitfinex Begin ********************"
     #check_interest(bitfinex, 'interest_log.html')
     try:
+      auto_renew(bitfinex, market_params)
       check_interest(bitfinex, 'interest_log.html')
     except Exception as e:
       exc_type, exc_value, exc_traceback = sys.exc_info()
