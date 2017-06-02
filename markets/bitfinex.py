@@ -64,6 +64,9 @@ class Bitfinex(Market):
     self.nonce = long(time.time() * 100000)
     self.nonce_lock = Lock()
 
+  def reset_nonce(self):
+    self.nonce = long(time.time() * 100000)
+
   def get_nonce(self):
     n = -1
     with self.nonce_lock:
@@ -241,7 +244,7 @@ def strategy_fixed_depth(currency, params):
   print 'Maximum lending rate:', max_rate
   print 'Total usd ask lower than max_rate:', ask_sum
   print 'Our target lending rate:', target_rate
-  if target_rate < 1.0 or target_rate > 999.0:
+  if target_rate < params['min_rate'] or target_rate > params['max_rate']:
     print 'unreasonable target_rate:', target_rate
     return
   # begin lending
@@ -304,7 +307,11 @@ def auto_renew(bitfinex, market_params):
      below |max_ask| depth of USD'''
   print '***** Credits ******'
   credits = bitfinex.credits()
+  if 'message' in credits:
+    bitfinex.reset_nonce()
+    return
   for credit in credits:
+    print credit
     print "id: %d\ttime: %s\tamount:%.02f\trate: %.04f\tperiod: %d" %(credit[u'id'], credit[u'timestamp'], float(credit[u'amount']), float(credit[u'rate']), credit[u'period'])
   for currency in ['ZEC', 'USD', 'BTC', 'ETH']:
     strategy_fixed_depth(currency, market_params[currency])
@@ -581,10 +588,17 @@ def check_interest(bitfinex, html_file):
 
   # on 2017/5/14
   # m_init = 0
-  nemo_init = 178022.63
-  nemo_last_percentage = 0.6706383188150888
-  nemo_percentage = 1.0
-  nemo_init_date = datetime.datetime(2017, 5, 14, tzinfo = tz)
+  #nemo_init = 178022.63
+  #nemo_last_percentage = 0.6706383188150888
+  #nemo_percentage = 1.0
+  #nemo_init_date = datetime.datetime(2017, 5, 14, tzinfo = tz)
+
+  # on 2017/6/1
+  # m_init = 56429.52
+  nemo_init = 183016.26
+  nemo_last_percentage = 0.8420433848823186
+  nemo_percentage = 0.764332785484881
+  nemo_init_date = datetime.datetime(2017, 6, 1, tzinfo = tz)
 
   nemo_days = (datetime.datetime.fromtimestamp(long(float(parsed[0]['timestamp'])), tz) - nemo_init_date).days + 1
   if nemo_days <= 1:
@@ -635,10 +649,10 @@ if __name__ == '__main__':
   requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
   bitfinex = Bitfinex(bitfinex_key, bitfinex_secret)
   market_params = {
-    'USD': { 'max_depth': 20000.0, 'max_lend': 2000.0, 'min_lend': 100.0, 'keep_fund': 0.01, 'max_rate': 10000.0 },
-    'ZEC': { 'max_depth': 100.0, 'max_lend': 10.0, 'min_lend': 0.1, 'keep_fund': 0.01, 'max_rate': 10000.0 },
-    'BTC': { 'max_depth': 100.0, 'max_lend': 1.8, 'min_lend': 0.03, 'keep_fund': 0.001, 'max_rate': 10000.0 },
-    'ETH': { 'max_depth': 1000.0, 'max_lend': 30.0, 'min_lend': 0.1, 'keep_fund': 0.01, 'max_rate': 10000.0 }
+    'USD': { 'max_depth': 20000.0, 'max_lend': 2000.0, 'min_lend': 100.0, 'keep_fund': 0.01, 'max_rate': 10000.0, 'min_rate': 12.0 },
+    'ZEC': { 'max_depth': 40.0, 'max_lend': 10.0, 'min_lend': 0.1, 'keep_fund': 0.01, 'max_rate': 10000.0, 'min_rate': 12.0 },
+    'BTC': { 'max_depth': 100.0, 'max_lend': 1.8, 'min_lend': 0.03, 'keep_fund': 0.001, 'max_rate': 10000.0, 'min_rate': 12.0 },
+    'ETH': { 'max_depth': 1000.0, 'max_lend': 30.0, 'min_lend': 0.1, 'keep_fund': 0.01, 'max_rate': 10000.0, 'min_rate': 12.0 }
   }
   while True:
     print "***************** Bitfinex Begin ********************"
@@ -655,7 +669,7 @@ if __name__ == '__main__':
       print '--------ERROR END-----------'
       pass
     print "***************** Bitfinex End ********************"
-    time.sleep(1)
+    time.sleep(10)
 
   # bitfinex.update_status()
   # print bitfinex.unified_bids
